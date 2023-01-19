@@ -31,5 +31,11 @@
 *.out
 *.app
 
+# Self explanatory
+*.tmp
 
+# Project Specific
 musicat/
+bin/
+compile_commands.events.json
+
