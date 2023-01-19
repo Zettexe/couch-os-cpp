@@ -1,0 +1,25 @@
+---
+Language: Cpp
+# The number of columns to use for continuation.
+ContinuationIndentWidth: 2
+# Whether to use spaces instead of tabs for indentation.
+UseTab: Never
+# The number of spaces to use for indentation.
+IndentWidth: 2
+# Whether to align continuation lines.
+AlignEscapedNewlines: Left
+# The maximum number of columns to use for each line.
+ColumnLimit: 160
+# Whether to break long lines.
+BreakBeforeBraces: Attach
+# Whether to break long lines in function calls.
+BreakBeforeTernaryOperators: true
+# Whether to break long lines in function definitions.
+BreakConstructorInitializers: AfterColon
+# Whether to break long lines in function definitions after a `(` or `,`.
+BreakConstructorInitializersBeforeComma: true
+# Whether to break long lines in function definitions after the `:` in an inheritance clause.
+BreakInheritanceList: AfterColon
+
+AllowShortCaseLabelsOnASingleLine: true
+IndentCaseLabels: true
