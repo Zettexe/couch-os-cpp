@@ -38,13 +38,21 @@ public:
     return tokens;
   }
 
-  bool contains(const std::string &search, size_t start_from = 0) const { return find(search, start_from) != std::string::npos; }
+  bool contains(const std::string &search, size_t start_from = 0) const {
+    return find(search, start_from) != std::string::npos;
+  }
 
-  bool contains(const char *search, size_t start_from = 0) const { return find(search, start_from) != std::string::npos; }
+  bool contains(const char *search, size_t start_from = 0) const {
+    return find(search, start_from) != std::string::npos;
+  }
 
-  bool contains(const char *search, size_t start_from, size_t count) const { return find(search, start_from, count) != std::string::npos; }
+  bool contains(const char *search, size_t start_from, size_t count) const {
+    return find(search, start_from, count) != std::string::npos;
+  }
 
-  bool contains(char search, size_t start_from = 0) const { return find(search, start_from) != std::string::npos; }
+  bool contains(char search, size_t start_from = 0) const {
+    return find(search, start_from) != std::string::npos;
+  }
 
   string &operator=(const std::string &str) {
     std::string::operator=(str);

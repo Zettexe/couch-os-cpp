@@ -22,15 +22,20 @@ private:
     Enjoy! ^-^)";
 
 public:
-  pasta(dpp::snowflake bot_id) { command_interface = dpp::slashcommand("pasta", "Big tasty pasta food", bot_id); }
+  pasta(dpp::snowflake bot_id) {
+    command_interface = dpp::slashcommand("pasta", "Big tasty pasta food", bot_id);
+  }
 
   inline void command_definition() override {
-    dpp::embed embed = dpp::embed()
-                         .set_title("Pasta Recipe")
-                         .set_author("Chef CouchOS", "", "https://www.dropbox.com/s/4g0om3fb3vmne69/chef-couch-os.jpg?dl=1")
-                         .set_description(recipe);
+    dpp::embed embed =
+      dpp::embed()
+        .set_title("Pasta Recipe")
+        .set_author("Chef CouchOS", "",
+                    "https://www.dropbox.com/s/4g0om3fb3vmne69/chef-couch-os.jpg?dl=1")
+        .set_description(recipe);
 
-    reply(dpp::message(event->command.get_channel().id, embed).set_reference(event->command.msg.id));
+    reply(
+      dpp::message(event->command.get_channel().id, embed).set_reference(event->command.msg.id));
   }
 };
 

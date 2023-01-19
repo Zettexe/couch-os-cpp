@@ -5,11 +5,11 @@
 
 class ping : public command {
 public:
-  ping(dpp::snowflake bot_id) { command_interface = dpp::slashcommand("ping", "Ping Pong!", bot_id); }
-
-  inline void command_definition() override {
-    reply("Pong!");
+  ping(dpp::snowflake bot_id) {
+    command_interface = dpp::slashcommand("ping", "Ping Pong!", bot_id);
   }
+
+  inline void command_definition() override { reply("Pong!"); }
 };
 
 #endif // MUSICOS_PING_H

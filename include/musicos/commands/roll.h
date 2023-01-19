@@ -41,13 +41,15 @@ struct roll_d {
 
 class roll : public command {
 private:
-  void error(const wiz::string &dice_string, const wiz::string &error_message, const int error_position = -1, const int error_position_length = 1);
+  void error(const wiz::string &dice_string, const wiz::string &error_message,
+             const int error_position = -1, const int error_position_length = 1);
   int evaluate_expression(std::string expression, roll_flags_d flags);
   roll_flags_d parse_modifiers(std::string modifiers);
 
 public:
   roll(dpp::snowflake bot_id) {
-    command_interface = dpp::slashcommand("roll", "#d#", bot_id).add_option(dpp::command_option(dpp::co_string, "dice", "#d#", true));
+    command_interface = dpp::slashcommand("roll", "#d#", bot_id)
+                          .add_option(dpp::command_option(dpp::co_string, "dice", "#d#", true));
   }
 
   void parse_dice_string(const wiz::string &input);

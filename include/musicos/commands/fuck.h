@@ -5,7 +5,8 @@
 
 class fuck : public random_command {
 public:
-  fuck(dpp::snowflake bot_id) : random_command({"Me ;)", "You", "Off", "That", "It", "Yes", "This", "The Man"}) {
+  fuck(dpp::snowflake bot_id) :
+      random_command({"Me ;)", "You", "Off", "That", "It", "Yes", "This", "The Man"}) {
     command_interface = dpp::slashcommand("fuck", "Brandon?", bot_id);
   }
 };

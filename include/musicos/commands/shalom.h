@@ -7,7 +7,9 @@
 
 class shalom : public command {
 public:
-  shalom(dpp::snowflake bot_id) { command_interface = dpp::slashcommand("shalom", "Hello but in Jewish", bot_id); }
+  shalom(dpp::snowflake bot_id) {
+    command_interface = dpp::slashcommand("shalom", "Hello but in Jewish", bot_id);
+  }
 
   inline void command_definition() override { reply("Greetings and may peace be upon you!"); }
 };

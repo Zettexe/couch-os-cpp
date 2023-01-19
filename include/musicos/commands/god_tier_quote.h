@@ -9,7 +9,8 @@ public:
     command_interface =
       dpp::slashcommand("god", "god", bot_id)
         .add_option(
-          dpp::command_option(dpp::co_sub_command_group, "tier", "tier").add_option(dpp::command_option(dpp::co_sub_command, "quote", "Gouda Tier Quotes")));
+          dpp::command_option(dpp::co_sub_command_group, "tier", "tier")
+            .add_option(dpp::command_option(dpp::co_sub_command, "quote", "Gouda Tier Quotes")));
 
     update_quotes(std::filesystem::path("data/gtquotes.json"));
   }

@@ -7,7 +7,9 @@
 
 class restart : public command {
 public:
-  restart(dpp::snowflake bot_id) { command_interface = dpp::slashcommand("restart", "Restart, Reboot, Reload", bot_id); }
+  restart(dpp::snowflake bot_id) {
+    command_interface = dpp::slashcommand("restart", "Restart, Reboot, Reload", bot_id);
+  }
 
   inline void command_definition() override {
     std::string message = "Restarting";

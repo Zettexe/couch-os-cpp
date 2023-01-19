@@ -11,7 +11,9 @@
 
 class zen_quote : public command {
 public:
-  zen_quote(dpp::snowflake bot_id) { command_interface = dpp::slashcommand("zenquote", "Only the thiccest of quotes", bot_id); }
+  zen_quote(dpp::snowflake bot_id) {
+    command_interface = dpp::slashcommand("zenquote", "Only the thiccest of quotes", bot_id);
+  }
 
   void command_definition() override;
 };

@@ -21,9 +21,10 @@ private:
 public:
   quote() {}
   quote(dpp::snowflake bot_id) {
-    command_interface = dpp::slashcommand("quote", "Citations", bot_id)
-                          .add_option(dpp::command_option(dpp::co_string, "quote", "Quote to add", false))
-                          .add_option(dpp::command_option(dpp::co_string, "author", "Whodunnit", false));
+    command_interface =
+      dpp::slashcommand("quote", "Citations", bot_id)
+        .add_option(dpp::command_option(dpp::co_string, "quote", "Quote to add", false))
+        .add_option(dpp::command_option(dpp::co_string, "author", "Whodunnit", false));
 
     update_quotes(std::filesystem::path(path));
   }

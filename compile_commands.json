@@ -1,0 +1,135 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-pthread",
+      "-std=c++17",
+      "-Wall",
+      "-Wextra",
+      "-g",
+      "-Iinclude",
+      "-I/usr/local/include",
+      "-c",
+      "-o",
+      "obj/command.o",
+      "source/command.cpp"
+    ],
+    "directory": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot",
+    "file": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot/source/command.cpp",
+    "output": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot/obj/command.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-pthread",
+      "-std=c++17",
+      "-Wall",
+      "-Wextra",
+      "-g",
+      "-Iinclude",
+      "-I/usr/local/include",
+      "-c",
+      "-o",
+      "obj/commands/quote.o",
+      "source/commands/quote.cpp"
+    ],
+    "directory": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot",
+    "file": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot/source/commands/quote.cpp",
+    "output": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot/obj/commands/quote.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-pthread",
+      "-std=c++17",
+      "-Wall",
+      "-Wextra",
+      "-g",
+      "-Iinclude",
+      "-I/usr/local/include",
+      "-c",
+      "-o",
+      "obj/commands/random_command.o",
+      "source/commands/random_command.cpp"
+    ],
+    "directory": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot",
+    "file": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot/source/commands/random_command.cpp",
+    "output": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot/obj/commands/random_command.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-pthread",
+      "-std=c++17",
+      "-Wall",
+      "-Wextra",
+      "-g",
+      "-Iinclude",
+      "-I/usr/local/include",
+      "-c",
+      "-o",
+      "obj/commands/roll.o",
+      "source/commands/roll.cpp"
+    ],
+    "directory": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot",
+    "file": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot/source/commands/roll.cpp",
+    "output": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot/obj/commands/roll.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-pthread",
+      "-std=c++17",
+      "-Wall",
+      "-Wextra",
+      "-g",
+      "-Iinclude",
+      "-I/usr/local/include",
+      "-c",
+      "-o",
+      "obj/commands/zen_quote.o",
+      "source/commands/zen_quote.cpp"
+    ],
+    "directory": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot",
+    "file": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot/source/commands/zen_quote.cpp",
+    "output": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot/obj/commands/zen_quote.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-pthread",
+      "-std=c++17",
+      "-Wall",
+      "-Wextra",
+      "-g",
+      "-Iinclude",
+      "-I/usr/local/include",
+      "-c",
+      "-o",
+      "obj/commands.o",
+      "source/commands.cpp"
+    ],
+    "directory": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot",
+    "file": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot/source/commands.cpp",
+    "output": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot/obj/commands.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-pthread",
+      "-std=c++17",
+      "-Wall",
+      "-Wextra",
+      "-g",
+      "-Iinclude",
+      "-I/usr/local/include",
+      "-c",
+      "-o",
+      "obj/main.o",
+      "source/main.cpp"
+    ],
+    "directory": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot",
+    "file": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot/source/main.cpp",
+    "output": "/mnt/c/Users/Zettexe/Desktop/OpenGPT Tests/bot/obj/main.o"
+  }
+]

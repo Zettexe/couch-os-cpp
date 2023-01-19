@@ -29,9 +29,9 @@ protected:
   // Event associated with the current instance of a called command.
   dpp::slashcommand_t *event;
   // Optional function for doing initialization in derived commands.
-  virtual void command_preprocess() = 0;
+  virtual void command_preprocess() {}
   // Optional function for executing the command.
-  virtual void command_definition() = 0;
+  virtual void command_definition() {};
 
   // Reply override to add logging.
   void reply(dpp::command_completion_event_t callback = dpp::utility::log_error());
@@ -50,6 +50,11 @@ protected:
   void edit_response(const dpp::message &message, dpp::command_completion_event_t callback = dpp::utility::log_error());
   // Edit response override to add logging.
   void edit_response(const std::string &message, dpp::command_completion_event_t callback = dpp::utility::log_error());
+
+  // General purpose logging
+  void log(const std::string &message);
+  template<typename... Args>
+  void log(fmt::format_string<Args...> fmt, Args &&...args);
 
 public:
   dpp::slashcommand command_interface;
