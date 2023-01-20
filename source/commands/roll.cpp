@@ -388,12 +388,110 @@ void roll::parse_dice_string(const wiz::string &input) {
   }
 }
 
+std::string roll::format_output(std::string input_string, std::string user_mention) {
+  std::stringstream output;
+  std::string truncate_string = "[...]\n````truncated`";
+  const size_t message_max_size = 2000;
+
+  output << user_mention << " rolled `[" << input_string << "]`: `" << data.total << "`\n";
+
+  if (data.results.size() > 0 && data.results[0].rolls.size() > 0 &&
+      (data.results[0].rolls[0].size() > 1 || data.results[0].rolls.size() > 1 ||
+       data.results.size() > 1)) {
+    output << "```js" << std::endl;
+
+    size_t roll_size = 0;
+    for (const roll_result_d &result : data.results) {
+      for (const std::vector<int> &roll : result.rolls) {
+        roll_size = std::max(roll_size, roll.size());
+      }
+    }
+
+    int max_size_total = 0;
+    int max_size_result = 0;
+    std::vector<int> max_size_rolls;
+    max_size_rolls.resize(roll_size, 0);
+    for (const roll_result_d &result : data.results) {
+      for (const std::vector<int> &rolls : result.rolls) {
+        for (size_t i = 0; i < rolls.size(); i++) {
+          int value_size = (int)std::to_string(rolls[i]).size();
+          max_size_rolls[i] = std::max(max_size_rolls[i], value_size);
+        }
+      }
+      for (const int &res : result.result) {
+        max_size_result = std::max(max_size_result, (int)std::to_string(res).size());
+      }
+      max_size_total = std::max(max_size_total, (int)std::to_string(result.total).size());
+    }
+
+    std::streampos prev_pos = 0;
+    for (roll_result_d result : data.results) {
+      prev_pos = output.tellp();
+      output << "Result " << std::setw(max_size_total) << std::right << result.total << " :";
+
+      if (result.result.size() > 0) {
+        output << " (";
+        for (size_t i = 0; i < result.result.size(); ++i) {
+          output << std::setw(max_size_result) << std::right << result.result[i];
+          if (i < result.result.size() - 1) {
+            output << ", ";
+          }
+        }
+        output << ")";
+      }
+
+      for (size_t i = 0; i < result.rolls.size(); i++) {
+        output << " [";
+        for (size_t j = 0; j < result.rolls[i].size(); j++) {
+          std::string value = std::to_string(result.rolls[i][j]);
+          if (std::find(result.reroll_positions.begin(), result.reroll_positions.end(),
+                        std::make_pair(i, j)) != result.reroll_positions.end()) {
+            for (int k = value.size() - 1; k >= 0; --k) {
+              value.insert(k, "͟");
+            }
+          }
+          output << std::setw(max_size_rolls[j]) << std::right << value;
+          if (j < result.rolls[i].size() - 1) {
+            output << ", ";
+          }
+        }
+        output << "]";
+      }
+
+      output << std::endl;
+
+      if (static_cast<size_t>(output.tellp()) > (message_max_size - truncate_string.size())) {
+        output.str(output.str().substr(0, prev_pos));
+        output.seekp(prev_pos);
+        output << truncate_string;
+        prev_pos = -1;
+        break;
+      }
+    }
+
+    if (prev_pos != -1) {
+      output << "```";
+    }
+  }
+
+  return output.str();
+}
+
 void roll::command_definition() {
-  data = {};
+  wiz::string input_string;
+  wiz::string mention;
+  if (event) {
+    std::vector<dpp::command_data_option> options =
+      event->command.get_command_interaction().options;
+    input_string = std::get<std::string>(options[0].value);
+    mention = event->command.usr.get_mention();
+  } else {
+    input_string = message_event->msg.content.substr(5);
+    mention = message_event->msg.author.get_mention();
+  }
 
-  std::vector<dpp::command_data_option> options = event->command.get_command_interaction().options;
-
-  std::string input_string = std::get<std::string>(options[0].value);
+  input_string = input_string.trim();
+  log("Input string: " + input_string);
 
   parse_dice_string(input_string);
 
@@ -401,85 +499,7 @@ void roll::command_definition() {
     return;
   }
 
-  std::stringstream output;
-  std::string truncate_string = "[...]\n````truncated`";
-  const size_t message_max_size = 2000;
+  wiz::string message = format_output(input_string, mention);
 
-  output << event->command.usr.get_mention() << " rolled `[" << input_string << "]`: `"
-         << data.total << "`\n```js" << std::endl;
-
-  size_t roll_size = 0;
-  for (const roll_result_d &result : data.results) {
-    for (const std::vector<int> &roll : result.rolls) {
-      roll_size = std::max(roll_size, roll.size());
-    }
-  }
-
-  int max_size_total = 0;
-  int max_size_result = 0;
-  std::vector<int> max_size_rolls;
-  max_size_rolls.resize(roll_size, 0);
-  for (const roll_result_d &result : data.results) {
-    for (const std::vector<int> &rolls : result.rolls) {
-      for (size_t i = 0; i < rolls.size(); i++) {
-        int value_size = (int)std::to_string(rolls[i]).size();
-        max_size_rolls[i] = std::max(max_size_rolls[i], value_size);
-      }
-    }
-    for (const int &res : result.result) {
-      max_size_result = std::max(max_size_result, (int)std::to_string(res).size());
-    }
-    max_size_total = std::max(max_size_total, (int)std::to_string(result.total).size());
-  }
-
-  std::streampos prev_pos = 0;
-  for (roll_result_d result : data.results) {
-    prev_pos = output.tellp();
-    output << "Result " << std::setw(max_size_total) << std::right << result.total << " :";
-
-    if (result.result.size() > 0) {
-      output << " (";
-      for (size_t i = 0; i < result.result.size(); ++i) {
-        output << std::setw(max_size_result) << std::right << result.result[i];
-        if (i < result.result.size() - 1) {
-          output << ", ";
-        }
-      }
-      output << ")";
-    }
-
-    for (size_t i = 0; i < result.rolls.size(); i++) {
-      output << " [";
-      for (size_t j = 0; j < result.rolls[i].size(); j++) {
-        std::string value = std::to_string(result.rolls[i][j]);
-        if (std::find(result.reroll_positions.begin(), result.reroll_positions.end(),
-                      std::make_pair(i, j)) != result.reroll_positions.end()) {
-          for (int k = value.size() - 1; k >= 0; --k) {
-            value.insert(k, "͟");
-          }
-        }
-        output << std::setw(max_size_rolls[j]) << std::right << value;
-        if (j < result.rolls[i].size() - 1) {
-          output << ", ";
-        }
-      }
-      output << "]";
-    }
-
-    output << std::endl;
-
-    if (static_cast<size_t>(output.tellp()) > (message_max_size - truncate_string.size())) {
-      output.str(output.str().substr(0, prev_pos));
-      output.seekp(prev_pos);
-      output << truncate_string;
-      prev_pos = -1;
-      break;
-    }
-  }
-
-  if (prev_pos != -1) {
-    output << "```";
-  }
-
-  reply(output.str(), ", Message Size: " + std::to_string(output.str().size()));
+  reply(message, ", Message Size: " + std::to_string(message.size()));
 }

@@ -8,6 +8,7 @@
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
+#include <dpp/dispatcher.h>
 #include <ios>
 #include <iostream>
 #include <random>
@@ -46,13 +47,15 @@ private:
   int evaluate_expression(std::string expression, roll_flags_d flags);
   roll_flags_d parse_modifiers(std::string modifiers);
 
+  void parse_dice_string(const wiz::string &input);
+
+  std::string format_output(std::string input_string, std::string user_mention);
+
 public:
   roll(dpp::snowflake bot_id) {
     command_interface = dpp::slashcommand("roll", "#d#", bot_id)
                           .add_option(dpp::command_option(dpp::co_string, "dice", "#d#", true));
   }
-
-  void parse_dice_string(const wiz::string &input);
 
   void command_definition() override;
 };

@@ -1,19 +1,25 @@
 #include "musicos/command.h"
+#include <dpp/cache.h>
+#include <dpp/dispatcher.h>
 #include <spdlog/spdlog.h>
 
-void command::log_reply(const std::string &message) {
+void command::log_generic(const std::string &message, const std::string &source) {
   std::string formatted_message = std::regex_replace(message, std::regex("\n"), "\\n");
 
-  spdlog::info("REPLY [{}]: Command: {}, Message: {}", event->command.get_guild().name,
-               command_interface.name, formatted_message);
+  std::string guild_name;
+  if (event) {
+    guild_name = event->command.get_guild().name;
+  } else {
+    guild_name = dpp::find_guild(message_event->msg.guild_id)->name;
+  }
+
+  spdlog::info("{} [{}]: Command: {}, Message: {}", source, guild_name, command_interface.name,
+               formatted_message);
 }
 
-void command::log_edit(const std::string &message) {
-  std::string formatted_message = std::regex_replace(message, std::regex("\n"), "\\n");
+void command::log_reply(const std::string &message) { log_generic(message, "REPLY"); }
 
-  spdlog::info("EDIT REPLY: Guild: {}, Command: {}, Message: {}", event->command.get_guild().name,
-               command_interface.name, formatted_message);
-}
+void command::log_edit(const std::string &message) { log_generic(message, "EDIT REPLY"); }
 
 std::string command::to_string(const dpp::command_value &value) {
   std::string result;
@@ -67,6 +73,22 @@ void command::execute(dpp::slashcommand_t &e) {
 
   this->command_preprocess();
   this->command_definition();
+  this->command_postprocess();
+
+  event = nullptr;
+}
+
+void command::execute(dpp::message_create_t &e, std::string command_name) {
+  message_event = &e;
+
+  spdlog::info("USED COMMAND [{}] ({}): {}", dpp::find_guild(message_event->msg.guild_id)->name,
+               message_event->msg.author.format_username(), command_name);
+
+  this->command_preprocess();
+  this->command_definition();
+  this->command_postprocess();
+
+  message_event = nullptr;
 }
 
 void command::reply(dpp::command_completion_event_t callback) { event->reply(callback); }
@@ -84,9 +106,13 @@ void command::reply(dpp::interaction_response_type type, const std::string &mess
   event->reply(type, limited_message, callback);
 }
 
-void command::reply(const dpp::message &message, const std::string &log_message,
+void command::reply(dpp::message &message, const std::string &log_message,
                     dpp::command_completion_event_t callback) {
   log_reply(message.content + log_message);
+  if (message_event) {
+    message_event->reply(message);
+    return;
+  }
   event->reply(message, callback);
 }
 
@@ -94,6 +120,10 @@ void command::reply(const std::string &message, const std::string &log_message,
                     dpp::command_completion_event_t callback) {
   std::string limited_message = limit_message_size(message);
   log_reply(limited_message + log_message);
+  if (message_event) {
+    message_event->reply(message);
+    return;
+  }
   event->reply(limited_message, callback);
 }
 
