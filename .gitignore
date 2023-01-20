@@ -43,3 +43,5 @@ compile_commands.events.json
 logs/
 
 .cache/
+
+assets/config.json
