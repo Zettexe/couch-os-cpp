@@ -42,6 +42,7 @@ void initialize_commands(dpp::snowflake bot_id) {
   commands.push_back(new start(bot_id));
   commands.push_back(new zen_quote(bot_id));
   commands.push_back(new join(bot_id));
+  commands.push_back(new leave(bot_id));
 
   for (command *command : commands) {
     commands_vector.push_back(command->command_interface);

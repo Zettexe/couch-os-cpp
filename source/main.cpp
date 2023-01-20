@@ -1,8 +1,10 @@
 #include "musicos/command.h"
+#include "musicos/commands/roll.h"
 #include "wiz/string.h"
 #include <chrono>
 #include <cstdio>
 #include <dirent.h>
+#include <dpp/dispatcher.h>
 #include <dpp/dpp.h>
 #include <fstream>
 #include <iomanip>
@@ -12,12 +14,6 @@
 #include <spdlog/sinks/daily_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <sstream>
-
-void handle_messages(const dpp::message_create_t &event) {
-  wiz::string message = event.msg.content;
-  if (message.starts_with("Test")) {
-  }
-}
 
 int get_file_count() {
   int count = 0;
@@ -86,7 +82,7 @@ int main() {
   config_file >> config;
 
   // Initialize the bot
-  dpp::cluster bot(config["discord_token"]);
+  dpp::cluster bot(config["discord_token"], dpp::i_default_intents | dpp::i_message_content);
 
   initialize_commands(bot.me.id);
 
@@ -102,7 +98,17 @@ int main() {
     }
   });
 
-  bot.on_message_create([](const dpp::message_create_t &event) { handle_messages(event); });
+  bot.on_message_create([](const dpp::message_create_t &event) {
+    wiz::string message = event.msg.content;
+    if (message.starts_with("roll")) {
+      for (command *cmd : commands) {
+        if (cmd->command_interface.name == "roll") {
+          cmd->execute((dpp::message_create_t &)event, "roll");
+          break;
+        }
+      }
+    }
+  });
 
   // bot.on_ready([&bot](dpp::ready_t) {
   //   if (dpp::run_once<struct register_bot_commands>()) {

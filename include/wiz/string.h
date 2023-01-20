@@ -1,18 +1,36 @@
 #ifndef WIZ_STRING_H
 #define WIZ_STRING_H
 
-#include <dpp/appcommand.h>
+#include <algorithm>
 #include <string>
-#include <variant>
+#include <vector>
 
 namespace wiz {
 class string : public std::string {
 public:
+  string() : std::string() {}
   string(const char *str) : std::string(str) {}
   string(const std::string &str) : std::string(str) {}
 
   bool starts_with(const std::string &search_string) const { return find(search_string) == 0; }
   bool is_int() const { return std::all_of(begin(), end(), ::isdigit); }
+
+  string ltrim() {
+    string str = string(*this);
+    str.erase(str.begin(),
+              std::find_if(str.begin(), str.end(), [](int ch) { return !std::isspace(ch); }));
+    return str;
+  }
+
+  string rtrim() {
+    string str = string(*this);
+    str.erase(
+      std::find_if(str.rbegin(), str.rend(), [](int ch) { return !std::isspace(ch); }).base(),
+      str.end());
+    return str;
+  }
+
+  string trim() { return ltrim().rtrim(); }
 
   std::vector<string> split(const std::string &delimiter) const {
     std::vector<string> tokens;
