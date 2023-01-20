@@ -39,3 +39,7 @@ musicat/
 bin/
 compile_commands.events.json
 
+
+logs/
+
+.cache/
