@@ -15,6 +15,12 @@ public:
   bool starts_with(const std::string &search_string) const { return find(search_string) == 0; }
   bool is_int() const { return std::all_of(begin(), end(), ::isdigit); }
 
+  string transform(int (*unary_operator)(int)) {
+    string str = string(*this);
+    std::transform(begin(), end(), str.begin(), unary_operator);
+    return str;
+  }
+
   string ltrim() {
     string str = string(*this);
     str.erase(str.begin(),
