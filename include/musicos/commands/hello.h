@@ -5,8 +5,8 @@
 
 class hello : public command {
 public:
-  hello(dpp::snowflake bot_id) {
-    command_interface = dpp::slashcommand("hello", "Says \"Hello!\"", bot_id);
+  dpp::slashcommand register_command() override {
+    return dpp::slashcommand("hello", "Says \"Hello!\"", event->command.application_id);
   }
 
   inline void command_definition() override { reply("Hello!"); }

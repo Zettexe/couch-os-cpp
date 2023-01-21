@@ -3,11 +3,6 @@
 
 #include "musicos/command.h"
 #include <dpp/discordclient.h>
-#include <dpp/snowflake.h>
-#include <mutex>
-#include <string>
-#include <unordered_map>
-#include <utility>
 
 struct player_d {
   bool connected;
@@ -50,7 +45,7 @@ protected:
     player_mutex.lock();
     dpp::guild guild = event->command.get_guild();
 
-    players.insert(std::make_pair(guild.id, *player));
+    players.insert(std::make_pair(guild.id, player_d()));
     player = &players[guild.id];
   }
 

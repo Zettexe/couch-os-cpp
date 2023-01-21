@@ -4,13 +4,14 @@
 #include "musicos/random_command.h"
 
 class crusade_time : public random_command {
+protected:
+  std::vector<std::string> choices = {"DEUS VULT", "DUES VULT", "DORIME", "HABEMUS GLADII DOU",
+                                      "SI VIS PACHEM PARA BELLUM"};
+
 public:
-  crusade_time(dpp::snowflake bot_id) :
-      random_command(
-        {"DEUS VULT", "DUES VULT", "DORIME", "HABEMUS GLADII DOU", "SI VIS PACHEM PARA BELLUM"}) {
-    command_interface =
-      dpp::slashcommand("crusade", "N/A", bot_id)
-        .add_option(dpp::command_option(dpp::co_sub_command, "time", "Deus Vult"));
+  dpp::slashcommand register_command() override {
+    return dpp::slashcommand("crusade", "N/A", event->command.application_id)
+      .add_option(dpp::command_option(dpp::co_sub_command, "time", "Deus Vult"));
   }
 };
 

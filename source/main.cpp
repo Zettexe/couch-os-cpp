@@ -1,6 +1,7 @@
 #include "musicos/command.h"
 #include "musicos/commands/roll.h"
 #include "wiz/string.h"
+#include <cctype>
 #include <chrono>
 #include <cstdio>
 #include <dirent.h>
@@ -90,7 +91,7 @@ int main() {
     // Iterate over the list of commands
     for (command *cmd : commands) {
       // Check if the command name matches the command invoked in the event
-      if (cmd->command_interface.name == event.command.get_command_name()) {
+      if (cmd->register_command().name == event.command.get_command_name()) {
         // Call the command function of the matching Command object
         cmd->execute(event);
         break; // Exit the loop once the command has been called
@@ -100,9 +101,10 @@ int main() {
 
   bot.on_message_create([](const dpp::message_create_t &event) {
     wiz::string message = event.msg.content;
+    message = message.transform(::tolower);
     if (message.starts_with("roll")) {
       for (command *cmd : commands) {
-        if (cmd->command_interface.name == "roll") {
+        if (cmd->register_command().name == "roll") {
           cmd->execute((dpp::message_create_t &)event, "roll");
           break;
         }

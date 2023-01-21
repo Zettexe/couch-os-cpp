@@ -47,6 +47,12 @@ bool has_precedence(char op1, char op2) {
   return true;
 }
 
+int random_int(int high, int low = 1) {
+  static std::mt19937 rng(std::random_device{}());
+  std::uniform_int_distribution<int> dist(low, high);
+  return dist(rng);
+}
+
 int apply_operator(int op1, int op2, char op, roll_flags_d flags, roll_result_d *result) {
   switch (op) {
     case '+': return op1 + op2;
@@ -58,7 +64,7 @@ int apply_operator(int op1, int op2, char op, roll_flags_d flags, roll_result_d 
       // Generate X random numbers between 1 and Y and add them together
       result->rolls.push_back({});
       for (int i = 0; i < op1; i++) {
-        int value = rand() % op2 + 1;
+        int value = random_int(op2);
         // Use result.total as a temporary variable since its already allocated.
         // It gets overwritten later anyways.
         total += value;
@@ -71,7 +77,7 @@ int apply_operator(int op1, int op2, char op, roll_flags_d flags, roll_result_d 
           int value = result->rolls[i][j];
           size_t k = 0;
           while (value >= flags.reroll.first && value <= flags.reroll.second) {
-            int new_value = rand() % op2 + 1;
+            int new_value = random_int(op2);
             result->rolls[i][j] = new_value;
             result->reroll_positions.push_back(std::make_pair(i, j));
 
@@ -100,10 +106,18 @@ int apply_operator(int op1, int op2, char op, roll_flags_d flags, roll_result_d 
 
       std::sort(result->result.begin(), result->result.end(), std::greater<int>());
 
-      if (flags.reverse_keep) {
-        result->result.erase(result->result.begin(), result->result.end() - flags.keep);
-      } else {
-        result->result.erase(result->result.begin() + flags.keep, result->result.end());
+      auto split =
+        std::next(result->result.begin(),
+                  std::abs(((int)result->result.size()) * flags.reverse_keep - flags.keep));
+      std::vector<int> high(result->result.begin(), split);
+      std::vector<int> low(split, result->result.end());
+
+      result->result = flags.reverse_keep ? low : high;
+      if (flags.keep > 0) {
+        for (size_t i = 0; i < (flags.reverse_keep ? high : low).size(); i++) {
+          int value = (flags.reverse_keep ? high : low)[i];
+          result->total -= value;
+        }
       }
 
       return total;
@@ -388,12 +402,12 @@ void roll::parse_dice_string(const wiz::string &input) {
   }
 }
 
-std::string roll::format_output(std::string input_string, std::string user_mention) {
+std::string roll::format_output(std::string input_string) {
   std::stringstream output;
   std::string truncate_string = "[...]\n````truncated`";
   const size_t message_max_size = 2000;
 
-  output << user_mention << " rolled `[" << input_string << "]`: `" << data.total << "`\n";
+  output << "Rolled `[" << input_string << "]`: **" << data.total << "**\n";
 
   if (data.results.size() > 0 && data.results[0].rolls.size() > 0 &&
       (data.results[0].rolls[0].size() > 1 || data.results[0].rolls.size() > 1 ||
@@ -479,18 +493,16 @@ std::string roll::format_output(std::string input_string, std::string user_menti
 
 void roll::command_definition() {
   wiz::string input_string;
-  wiz::string mention;
   if (event) {
     std::vector<dpp::command_data_option> options =
       event->command.get_command_interaction().options;
     input_string = std::get<std::string>(options[0].value);
-    mention = event->command.usr.get_mention();
   } else {
     input_string = message_event->msg.content.substr(5);
-    mention = message_event->msg.author.get_mention();
   }
 
   input_string = input_string.trim();
+  input_string.transform(::tolower);
   log("Input string: " + input_string);
 
   parse_dice_string(input_string);
@@ -499,7 +511,7 @@ void roll::command_definition() {
     return;
   }
 
-  wiz::string message = format_output(input_string, mention);
+  wiz::string message = format_output(input_string);
 
   reply(message, ", Message Size: " + std::to_string(message.size()));
 }

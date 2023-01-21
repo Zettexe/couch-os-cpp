@@ -5,7 +5,9 @@
 
 class begone : public command {
 public:
-  begone(dpp::snowflake bot_id) { command_interface = dpp::slashcommand("begone", "Thot", bot_id); }
+  dpp::slashcommand register_command() override {
+    return dpp::slashcommand("begone", "Thot", event->command.application_id);
+  }
 
   inline void command_definition() override { reply("Thot"); }
 };

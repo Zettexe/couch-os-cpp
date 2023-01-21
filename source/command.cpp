@@ -13,7 +13,7 @@ void command::log_generic(const std::string &message, const std::string &source)
     guild_name = dpp::find_guild(message_event->msg.guild_id)->name;
   }
 
-  spdlog::info("{} [{}]: Command: {}, Message: {}", source, guild_name, command_interface.name,
+  spdlog::info("{} [{}]: Command: {}, Message: {}", source, guild_name, register_command().name,
                formatted_message);
 }
 

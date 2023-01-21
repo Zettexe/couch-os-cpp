@@ -1,13 +1,11 @@
 #ifndef MUSICOS_COMMAND_H
 #define MUSICOS_COMMAND_H
 
+#include <dpp/appcommand.h>
 #include <dpp/dispatcher.h>
-#include <dpp/dpp.h>
+#include <fmt/core.h>
 #include <list>
-#include <regex>
-#include <spdlog/spdlog.h>
-#include <sstream>
-#include <string_view>
+#include <string>
 
 class command {
 private:
@@ -69,7 +67,8 @@ protected:
   template <typename... Args> void log(fmt::format_string<Args...> fmt, Args &&...args);
 
 public:
-  dpp::slashcommand command_interface;
+  virtual dpp::slashcommand register_command();
+  // virtual dpp::slashcommand register_command(dpp::snowflake bot_id);
 
   virtual ~command() {}
   // Public interface for executing a command.

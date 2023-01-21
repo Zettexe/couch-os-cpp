@@ -5,14 +5,13 @@
 
 class god_tier_quote : public quote {
 public:
-  god_tier_quote(dpp::snowflake bot_id) : quote() {
-    command_interface =
-      dpp::slashcommand("god", "god", bot_id)
-        .add_option(
-          dpp::command_option(dpp::co_sub_command_group, "tier", "tier")
-            .add_option(dpp::command_option(dpp::co_sub_command, "quote", "Gouda Tier Quotes")));
-
+  dpp::slashcommand register_command() override {
     update_quotes(std::filesystem::path("data/gtquotes.json"));
+
+    return dpp::slashcommand("god", "god", event->command.application_id)
+      .add_option(
+        dpp::command_option(dpp::co_sub_command_group, "tier", "tier")
+          .add_option(dpp::command_option(dpp::co_sub_command, "quote", "Gouda Tier Quotes")));
   }
 };
 

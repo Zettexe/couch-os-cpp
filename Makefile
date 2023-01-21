@@ -16,7 +16,7 @@ OBJEXT      := o
 
 #Flags, Libraries and Includes
 CFLAGS      := -pthread -std=c++17 -Wall -Wextra -g -fno-limit-debug-info
-LIB         := -ldpp -lcurl -lcurlpp -lfmt -lspdlog -lboost_regex
+LIB         := -ldpp -lcurl -lcurlpp -lfmt -lspdlog -lboost_regex -lsodium -lopus
 INC         := -I$(INCDIR) -I/usr/local/include
 INCDEP      := -I$(INCDIR)
 
