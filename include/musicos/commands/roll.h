@@ -2,18 +2,10 @@
 #define MUSICOS_ROLL_H
 
 #include "musicos/command.h"
-#include <algorithm>
-#include <array>
 #include <boost/regex.hpp>
-#include <cctype>
-#include <cmath>
-#include <cstdlib>
-#include <dpp/dispatcher.h>
-#include <ios>
-#include <iostream>
 #include <random>
-#include <sstream>
-#include <vector>
+#include <spdlog/spdlog.h>
+#include <stack>
 #include <wiz/string.h>
 
 struct roll_flags_d {
@@ -53,9 +45,9 @@ private:
   std::string format_output(std::string input_string);
 
 public:
-  roll(dpp::snowflake bot_id) {
-    command_interface = dpp::slashcommand("roll", "#d#", bot_id)
-                          .add_option(dpp::command_option(dpp::co_string, "dice", "#d#", true));
+  dpp::slashcommand register_command() override {
+    return dpp::slashcommand("roll", "#d#", event->command.application_id)
+      .add_option(dpp::command_option(dpp::co_string, "dice", "#d#", true));
   }
 
   void command_definition() override;

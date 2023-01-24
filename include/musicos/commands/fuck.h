@@ -4,10 +4,13 @@
 #include "musicos/random_command.h"
 
 class fuck : public random_command {
+protected:
+  std::vector<std::string> choices = {"Me ;)", "You", "Off",  "That",
+                                      "It",    "Yes", "This", "The Man"};
+
 public:
-  fuck(dpp::snowflake bot_id) :
-      random_command({"Me ;)", "You", "Off", "That", "It", "Yes", "This", "The Man"}) {
-    command_interface = dpp::slashcommand("fuck", "Brandon?", bot_id);
+  dpp::slashcommand register_command() override {
+    return dpp::slashcommand("fuck", "Brandon?", event->command.application_id);
   }
 };
 

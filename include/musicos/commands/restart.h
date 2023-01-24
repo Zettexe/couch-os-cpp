@@ -2,13 +2,11 @@
 #define MUSICOS_RESTART_H
 
 #include "musicos/command.h"
-#include <chrono>
-#include <thread>
 
 class restart : public command {
 public:
-  restart(dpp::snowflake bot_id) {
-    command_interface = dpp::slashcommand("restart", "Restart, Reboot, Reload", bot_id);
+  dpp::slashcommand register_command() override {
+    return dpp::slashcommand("restart", "Restart, Reboot, Reload", event->command.application_id);
   }
 
   inline void command_definition() override {

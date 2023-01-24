@@ -7,8 +7,9 @@
 
 class join : public music_command {
 public:
-  join(dpp::snowflake bot_id) {
-    command_interface = dpp::slashcommand("join", "Joins the users voice channel.", bot_id);
+  dpp::slashcommand register_command() override {
+    return dpp::slashcommand("join", "Joins the users voice channel.",
+                             event->command.application_id);
   }
 
   inline void command_definition() override {
@@ -34,8 +35,9 @@ public:
 
 class leave : public music_command {
 public:
-  leave(dpp::snowflake bot_id) {
-    command_interface = dpp::slashcommand("leave", "Leaves voice channel if connected.", bot_id);
+  dpp::slashcommand register_command() override {
+    return dpp::slashcommand("leave", "Leaves voice channel if connected.",
+                             event->command.application_id);
   }
 
   inline void command_definition() override {

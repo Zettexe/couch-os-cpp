@@ -22,8 +22,8 @@ private:
     Enjoy! ^-^)";
 
 public:
-  pasta(dpp::snowflake bot_id) {
-    command_interface = dpp::slashcommand("pasta", "Big tasty pasta food", bot_id);
+  dpp::slashcommand register_command() override {
+    return dpp::slashcommand("pasta", "Big tasty pasta food", event->command.application_id);
   }
 
   inline void command_definition() override {

@@ -2,11 +2,6 @@
 #define MUSICOS_QUOTE_H
 
 #include "musicos/command.h"
-#include <filesystem>
-#include <fstream>
-#include <nlohmann/json.hpp>
-#include <random>
-#include <sstream>
 
 struct quote_t {
   std::string text;
@@ -19,14 +14,12 @@ private:
   std::filesystem::path path = "data/quotes.json";
 
 public:
-  quote() {}
-  quote(dpp::snowflake bot_id) {
-    command_interface =
-      dpp::slashcommand("quote", "Citations", bot_id)
-        .add_option(dpp::command_option(dpp::co_string, "quote", "Quote to add", false))
-        .add_option(dpp::command_option(dpp::co_string, "author", "Whodunnit", false));
-
+  dpp::slashcommand register_command() override {
     update_quotes(std::filesystem::path(path));
+
+    return dpp::slashcommand("quote", "Citations", event->command.application_id)
+      .add_option(dpp::command_option(dpp::co_string, "quote", "Quote to add", false))
+      .add_option(dpp::command_option(dpp::co_string, "author", "Whodunnit", false));
   }
 
   void update_quotes(std::filesystem::path file_path);
