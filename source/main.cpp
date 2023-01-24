@@ -1,6 +1,9 @@
 #include "musicos/command.h"
 #include "musicos/commands/roll.h"
+#include "musicos/music_command.h"
+#include "musicos/player_manager.h"
 #include "wiz/string.h"
+#include <cctype>
 #include <chrono>
 #include <cstdio>
 #include <dirent.h>
@@ -83,8 +86,9 @@ int main() {
 
   // Initialize the bot
   dpp::cluster bot(config["discord_token"], dpp::i_default_intents | dpp::i_message_content);
+  player_manager_c player_manager = player_manager_c();
 
-  initialize_commands(bot.me.id);
+  initialize_commands(bot.me.id, &player_manager);
 
   bot.on_slashcommand([](dpp::slashcommand_t event) {
     // Iterate over the list of commands
@@ -100,6 +104,7 @@ int main() {
 
   bot.on_message_create([](const dpp::message_create_t &event) {
     wiz::string message = event.msg.content;
+    message = message.transform(::tolower);
     if (message.starts_with("roll")) {
       for (command *cmd : commands) {
         if (cmd->command_interface.name == "roll") {
@@ -183,6 +188,15 @@ int main() {
         spdlog::info("Commands Created: {}", command_names.str());
       });
   });
+
+  bot.on_voice_ready([&player_manager](dpp::voice_ready_t event) {
+    player_manager.set_voice_client(event.voice_client, event.voice_client->server_id);
+    player_manager.stream_file("music/test_song.opus", event.voice_client->server_id);
+  });
+
+  // bot.on_voice_state_update([](dpp::voice_state_update_t event){
+  //   event.state
+  // });
 
   // Run the bot
   bot.start(dpp::st_wait);

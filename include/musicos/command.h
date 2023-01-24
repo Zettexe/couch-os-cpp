@@ -1,6 +1,7 @@
 #ifndef MUSICOS_COMMAND_H
 #define MUSICOS_COMMAND_H
 
+#include "musicos/player_manager.h"
 #include <dpp/dispatcher.h>
 #include <dpp/dpp.h>
 #include <list>
@@ -81,6 +82,6 @@ public:
 
 extern std::list<command *> commands;
 extern std::vector<dpp::slashcommand> commands_vector;
-void initialize_commands(dpp::snowflake bot_id);
+void initialize_commands(dpp::snowflake bot_id, player_manager_c *player_manager);
 
 #endif // MUSICOS_COMMAND_H

@@ -16,7 +16,9 @@
 #include "musicos/commands/shalom.h"
 #include "musicos/commands/start.h"
 #include "musicos/commands/zen_quote.h"
+#include "musicos/music_command.h"
 
+#include "musicos/player_manager.h"
 #include <dpp/dpp.h>
 #include <string>
 
@@ -25,7 +27,7 @@ std::list<command *> commands;
 std::vector<dpp::slashcommand> commands_vector;
 
 // Add an instance of the derived class to the list of commands in a function
-void initialize_commands(dpp::snowflake bot_id) {
+void initialize_commands(dpp::snowflake bot_id, player_manager_c *player_manager) {
   commands.push_back(new begone(bot_id));
   commands.push_back(new celebrate(bot_id));
   commands.push_back(new crusade_time(bot_id));
@@ -46,5 +48,11 @@ void initialize_commands(dpp::snowflake bot_id) {
 
   for (command *command : commands) {
     commands_vector.push_back(command->command_interface);
+    music_command *t = dynamic_cast<music_command *>(command);
+    if (t != nullptr) {
+      t->set_player_manager(player_manager);
+    }
   }
 }
+
+player_manager_c *music_command::player_manager;

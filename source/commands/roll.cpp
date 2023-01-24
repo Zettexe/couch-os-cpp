@@ -1,4 +1,5 @@
 #include "musicos/commands/roll.h"
+#include <cctype>
 
 roll_d data;
 
@@ -8,15 +9,15 @@ void roll::error(const wiz::string &dice_string, const wiz::string &error_messag
   for (int i = 0; i < static_cast<int>(dice_string.size()); i++) {
     if (i >= error_position && i <= error_position + error_position_length - 1) {
       error_line += "^";
-      continue;
+      break;
     }
 
-    error_line += "~";
+    error_line += " ";
   }
 
-  spdlog::error("{}, {}", error_message, dice_string);
-  reply(
-    fmt::format("```diff\n- ERROR: {}\n  {}\n- {}\n```", error_message, dice_string, error_line));
+  spdlog::error("{} at position {} [{}]", error_message, error_position, dice_string);
+  reply(fmt::format("```hs\n ERROR: \"{}\"\n \"{}\"\n  {}\n```", error_message, dice_string,
+                    error_line));
 
   data.is_error = true;
 }
@@ -47,18 +48,24 @@ bool has_precedence(char op1, char op2) {
   return true;
 }
 
+int random_int(int high, int low = 1) {
+  static std::mt19937 rng(std::random_device{}());
+  std::uniform_int_distribution<int> dist(low, high);
+  return dist(rng);
+}
+
 int apply_operator(int op1, int op2, char op, roll_flags_d flags, roll_result_d *result) {
   switch (op) {
-    case '+': return op1 + op2;
-    case '-': return op1 - op2;
-    case '*': return op1 * op2;
-    case '/': return op1 / op2;
+    case '+': data.has_calculation = true; return op1 + op2;
+    case '-': data.has_calculation = true; return op1 - op2;
+    case '*': data.has_calculation = true; return op1 * op2;
+    case '/': data.has_calculation = true; return op1 / op2;
     case 'd':
       int total = 0;
       // Generate X random numbers between 1 and Y and add them together
       result->rolls.push_back({});
       for (int i = 0; i < op1; i++) {
-        int value = rand() % op2 + 1;
+        int value = random_int(op2);
         // Use result.total as a temporary variable since its already allocated.
         // It gets overwritten later anyways.
         total += value;
@@ -66,13 +73,16 @@ int apply_operator(int op1, int op2, char op, roll_flags_d flags, roll_result_d 
         result->result.push_back(value);
       }
 
+      size_t l = 0;
       for (size_t i = 0; i < result->rolls.size(); i++) {
         for (size_t j = 0; j < result->rolls[i].size(); j++) {
           int value = result->rolls[i][j];
           size_t k = 0;
           while (value >= flags.reroll.first && value <= flags.reroll.second) {
-            int new_value = rand() % op2 + 1;
+            int new_value = random_int(op2);
             result->rolls[i][j] = new_value;
+            result->result[l] = new_value;
+
             result->reroll_positions.push_back(std::make_pair(i, j));
 
             if (flags.explode) {
@@ -81,7 +91,7 @@ int apply_operator(int op1, int op2, char op, roll_flags_d flags, roll_result_d 
               total -= (value - new_value);
             }
             value = new_value;
-            if (k >= std::min<size_t>(flags.reroll_repeat, 100) - 1) {
+            if (k >= std::min<size_t>(flags.reroll_repeat, 1000) - 1) {
               break;
             }
             k += 1;
@@ -89,6 +99,7 @@ int apply_operator(int op1, int op2, char op, roll_flags_d flags, roll_result_d 
           if (k > 0) {
             result->reroll_positions.push_back(std::make_pair(i, j));
           }
+          l += 1;
         }
       }
 
@@ -100,10 +111,18 @@ int apply_operator(int op1, int op2, char op, roll_flags_d flags, roll_result_d 
 
       std::sort(result->result.begin(), result->result.end(), std::greater<int>());
 
-      if (flags.reverse_keep) {
-        result->result.erase(result->result.begin(), result->result.end() - flags.keep);
-      } else {
-        result->result.erase(result->result.begin() + flags.keep, result->result.end());
+      auto split =
+        std::next(result->result.begin(),
+                  std::abs(((int)result->result.size()) * flags.reverse_keep - flags.keep));
+      std::vector<int> high(result->result.begin(), split);
+      std::vector<int> low(split, result->result.end());
+
+      result->result = flags.reverse_keep ? low : high;
+      if (flags.keep > 0) {
+        for (size_t i = 0; i < (flags.reverse_keep ? high : low).size(); i++) {
+          int value = (flags.reverse_keep ? high : low)[i];
+          total -= value;
+        }
       }
 
       return total;
@@ -205,7 +224,7 @@ roll_flags_d roll::parse_modifiers(std::string modifiers) {
     // Match zero or more digits, or an asterisk
     "(\\d*|\\*)"
     // Match 'e', 'r', "explode", or "reroll"
-    "([er]|explode|reroll)"
+    "([er]|exp|explode|reroll)"
     // Match one or more digits
     "(\\d+)"
     // Match an optional operator: either ">=", ">", "<=", "<", "-"
@@ -217,9 +236,13 @@ roll_flags_d roll::parse_modifiers(std::string modifiers) {
     // Match an optional "-" character
     "(-)?"
     // Match the "k" character
-    "k"
+    "(?:k|keep)"
     // Match one or more digits
-    "(\\d+)");
+    "(\\d+)"
+    // Boolean OR operator
+    "|"
+    // Match shorthands for advantage/disadvantage
+    "(disadvantage|advantage|dis|adv|d|a)");
 
   boost::sregex_iterator it(modifiers.begin(), modifiers.end(), pattern);
   boost::sregex_iterator end;
@@ -233,6 +256,12 @@ roll_flags_d roll::parse_modifiers(std::string modifiers) {
     std::string reroll_operator = matches[4].str();
     std::string k_prefix = matches[6].str();
     std::string k_digit = matches[7].str();
+    std::string adv = matches[8].str();
+    if (adv.length() > 0) {
+      if (adv[0] == 'd')
+        k_prefix = "-";
+      k_digit = "1";
+    }
 
     std::string reroll_type = matches[2].str();
 
@@ -322,19 +351,14 @@ roll_flags_d roll::parse_modifiers(std::string modifiers) {
 void roll::parse_dice_string(const wiz::string &input) {
   data = roll_d();
 
-  wiz::string input_string = input;
-
-  if (input == "stats")
-    input_string = "6 4d6 k3";
-
-  std::vector<wiz::string> vec = input_string.split(" ");
+  std::vector<wiz::string> vec = input.split(" ");
 
   int repeat = 1;
   wiz::string dice_string = "";
   wiz::string modifiers = "";
 
   if (vec.size() == 1) {
-    dice_string = input_string;
+    dice_string = input;
   } else if (vec.size() == 2) {
     if (vec[0].is_int()) {
       repeat = std::stoi(vec[0]);
@@ -359,10 +383,10 @@ void roll::parse_dice_string(const wiz::string &input) {
   }
 
   if (repeat > 10000)
-    return error(input_string, "Number has to be smaller than 10k!", 0, vec[0].size());
+    return error(input, "Number has to be smaller than 10k!", 0, vec[0].size());
 
   if (repeat <= 0)
-    return error(input_string, "Number has to be larger than 0!", 0, vec[0].size());
+    return error(input, "Number has to be larger than 0!", 0, vec[0].size());
 
   roll_flags_d flags;
 
@@ -370,6 +394,15 @@ void roll::parse_dice_string(const wiz::string &input) {
     flags = parse_modifiers(modifiers);
     if (flags.is_error)
       return;
+  }
+
+  for (size_t i = 0; i < dice_string.size(); i++) {
+    char c = dice_string[i];
+    std::string allowed_chars = "d+-/*()";
+    if (!isdigit(c) && allowed_chars.find(c) == std::string::npos) {
+      error(dice_string, "Invalid character", i);
+      return;
+    }
   }
 
   for (int i = 0; i < repeat; i++) {
@@ -388,34 +421,31 @@ void roll::parse_dice_string(const wiz::string &input) {
   }
 }
 
-std::string roll::format_output(std::string input_string, std::string user_mention) {
+std::string roll::format_output(std::string input_string) {
   std::stringstream output;
   std::string truncate_string = "[...]\n````truncated`";
   const size_t message_max_size = 2000;
 
-  output << user_mention << " rolled `[" << input_string << "]`: `" << data.total << "`\n";
+  output << "Rolled `[" << input_string << "]`: **" << data.total << "**\n";
 
   if (data.results.size() > 0 && data.results[0].rolls.size() > 0 &&
       (data.results[0].rolls[0].size() > 1 || data.results[0].rolls.size() > 1 ||
-       data.results.size() > 1)) {
+       data.results.size() > 1 || data.has_calculation)) {
     output << "```js" << std::endl;
-
-    size_t roll_size = 0;
-    for (const roll_result_d &result : data.results) {
-      for (const std::vector<int> &roll : result.rolls) {
-        roll_size = std::max(roll_size, roll.size());
-      }
-    }
 
     int max_size_total = 0;
     int max_size_result = 0;
     std::vector<int> max_size_rolls;
-    max_size_rolls.resize(roll_size, 0);
     for (const roll_result_d &result : data.results) {
+      size_t j = 0;
       for (const std::vector<int> &rolls : result.rolls) {
         for (size_t i = 0; i < rolls.size(); i++) {
           int value_size = (int)std::to_string(rolls[i]).size();
-          max_size_rolls[i] = std::max(max_size_rolls[i], value_size);
+          if (max_size_rolls.size() < j + 1) {
+            max_size_rolls.push_back(0);
+          }
+          max_size_rolls[j] = std::max(max_size_rolls[i], value_size);
+          j += 1;
         }
       }
       for (const int &res : result.result) {
@@ -479,18 +509,20 @@ std::string roll::format_output(std::string input_string, std::string user_menti
 
 void roll::command_definition() {
   wiz::string input_string;
-  wiz::string mention;
   if (event) {
     std::vector<dpp::command_data_option> options =
       event->command.get_command_interaction().options;
     input_string = std::get<std::string>(options[0].value);
-    mention = event->command.usr.get_mention();
   } else {
     input_string = message_event->msg.content.substr(5);
-    mention = message_event->msg.author.get_mention();
   }
 
   input_string = input_string.trim();
+  input_string = input_string.transform(::tolower);
+
+  if (input_string == "stats")
+    input_string = "6 4d6 *r1k3";
+
   log("Input string: " + input_string);
 
   parse_dice_string(input_string);
@@ -499,7 +531,7 @@ void roll::command_definition() {
     return;
   }
 
-  wiz::string message = format_output(input_string, mention);
+  wiz::string message = format_output(input_string);
 
   reply(message, ", Message Size: " + std::to_string(message.size()));
 }

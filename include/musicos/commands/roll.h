@@ -37,6 +37,7 @@ struct roll_result_d {
 struct roll_d {
   int total = 0;
   std::vector<roll_result_d> results = {};
+  bool has_calculation = false;
   bool is_error = false;
 };
 
@@ -49,7 +50,7 @@ private:
 
   void parse_dice_string(const wiz::string &input);
 
-  std::string format_output(std::string input_string, std::string user_mention);
+  std::string format_output(std::string input_string);
 
 public:
   roll(dpp::snowflake bot_id) {
