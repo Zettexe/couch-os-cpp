@@ -2,8 +2,10 @@
 #define MUSICOS_COMMAND_H
 
 #include "musicos/player_manager.h"
+#include <dpp/cluster.h>
 #include <dpp/dispatcher.h>
-#include <fmt/core.h>
+#include <dpp/dpp.h>
+#include <dpp/snowflake.h>
 #include <list>
 #include <string>
 
@@ -38,28 +40,25 @@ protected:
   virtual void command_postprocess() {}
 
   // event.reply() with logging.
-  void reply(dpp::command_completion_event_t callback = dpp::utility::log_error());
-  // event.reply() with logging.
   void reply(dpp::interaction_response_type type, const dpp::message &message,
-             const std::string &log_message = "",
-             dpp::command_completion_event_t callback = dpp::utility::log_error());
+             const std::string &log_message = "");
   // event.reply() with logging.
   void reply(dpp::interaction_response_type type, const std::string &message,
-             const std::string &log_message = "",
-             dpp::command_completion_event_t callback = dpp::utility::log_error());
+             const std::string &log_message = "");
   // event.reply() with logging.
-  void reply(dpp::message &message, const std::string &log_message = "",
-             dpp::command_completion_event_t callback = dpp::utility::log_error());
+  void reply(dpp::message &message, const std::string &log_message = "");
   // event.reply() with logging.
-  void reply(const std::string &message, const std::string &log_message = "",
-             dpp::command_completion_event_t callback = dpp::utility::log_error());
+  void reply(const std::string &message, const std::string &log_message = "");
 
   // event.edit_response() with logging.
-  void edit_response(const dpp::message &message,
-                     dpp::command_completion_event_t callback = dpp::utility::log_error());
+  void edit_response(const dpp::message &message);
   // event.edit_response() with logging.
-  void edit_response(const std::string &message,
-                     dpp::command_completion_event_t callback = dpp::utility::log_error());
+  void edit_response(const std::string &message);
+
+  // Create a message.
+  void create_message(const dpp::message &message);
+  // Create a message.
+  void create_message(const std::string &message, const dpp::snowflake &channel_id);
 
   // General purpose logging
   void log(const std::string &message);
@@ -67,8 +66,9 @@ protected:
   template <typename... Args> void log(fmt::format_string<Args...> fmt, Args &&...args);
 
 public:
-  virtual dpp::slashcommand register_command();
-  // virtual dpp::slashcommand register_command(dpp::snowflake bot_id);
+  static dpp::cluster *bot;
+
+  dpp::slashcommand command_interface;
 
   virtual ~command() {}
   // Public interface for executing a command.

@@ -1,8 +1,6 @@
 #include "musicos/commands/roll.h"
 #include <cctype>
 
-roll_d data;
-
 void roll::error(const wiz::string &dice_string, const wiz::string &error_message,
                  const int error_position, const int error_position_length) {
   std::string error_line = "";
@@ -54,7 +52,7 @@ int random_int(int high, int low = 1) {
   return dist(rng);
 }
 
-int apply_operator(int op1, int op2, char op, roll_flags_d flags, roll_result_d *result) {
+int roll::apply_operator(int op1, int op2, char op, roll_flags_d flags, roll_result_d *result) {
   switch (op) {
     case '+': data.has_calculation = true; return op1 + op2;
     case '-': data.has_calculation = true; return op1 - op2;

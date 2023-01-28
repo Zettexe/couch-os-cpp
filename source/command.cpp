@@ -1,7 +1,10 @@
 #include "musicos/command.h"
 #include <dpp/cache.h>
 #include <dpp/dispatcher.h>
+#include <dpp/message.h>
 #include <spdlog/spdlog.h>
+
+dpp::cluster *command::bot;
 
 void command::log_generic(const std::string &message, const std::string &source) {
   std::string formatted_message = std::regex_replace(message, std::regex("\n"), "\\n");
@@ -91,51 +94,57 @@ void command::execute(dpp::message_create_t &e, std::string command_name) {
   message_event = nullptr;
 }
 
-void command::reply(dpp::command_completion_event_t callback) { event->reply(callback); }
-
 void command::reply(dpp::interaction_response_type type, const dpp::message &message,
-                    const std::string &log_message, dpp::command_completion_event_t callback) {
+                    const std::string &log_message) {
   log_reply(message.content + log_message);
-  event->reply(type, message, callback);
+  event->reply(type, message);
 }
 
 void command::reply(dpp::interaction_response_type type, const std::string &message,
-                    const std::string &log_message, dpp::command_completion_event_t callback) {
+                    const std::string &log_message) {
   std::string limited_message = limit_message_size(message);
   log_reply(limited_message + log_message);
-  event->reply(type, limited_message, callback);
+  event->reply(type, limited_message);
 }
 
-void command::reply(dpp::message &message, const std::string &log_message,
-                    dpp::command_completion_event_t callback) {
+void command::reply(dpp::message &message, const std::string &log_message) {
   log_reply(message.content + log_message);
   if (message_event) {
     message_event->reply(message);
     return;
   }
-  event->reply(message, callback);
+  event->reply(message);
 }
 
-void command::reply(const std::string &message, const std::string &log_message,
-                    dpp::command_completion_event_t callback) {
+void command::reply(const std::string &message, const std::string &log_message) {
   std::string limited_message = limit_message_size(message);
   log_reply(limited_message + log_message);
   if (message_event) {
     message_event->reply(message);
     return;
   }
-  event->reply(limited_message, callback);
+  event->reply(limited_message);
 }
 
-void command::edit_response(const dpp::message &message, dpp::command_completion_event_t callback) {
+void command::edit_response(const dpp::message &message) {
   log_edit(message.content);
-  event->edit_response(message, callback);
+  event->edit_response(message);
 }
 
-void command::edit_response(const std::string &message, dpp::command_completion_event_t callback) {
+void command::edit_response(const std::string &message) {
   std::string limited_message = limit_message_size(message);
   log_edit(limited_message);
-  event->edit_response(limited_message, callback);
+  event->edit_response(limited_message);
+}
+
+void command::create_message(const dpp::message &message) {
+  log_generic(message.content, "MESSAGE CREATED");
+  bot->message_create(message);
+}
+
+void command::create_message(const std::string &message, const dpp::snowflake &channel_id) {
+  log_generic(message, "MESSAGE CREATED");
+  bot->message_create(dpp::message(channel_id, message));
 }
 
 void command::log(const std::string &message) { spdlog::info(message); }

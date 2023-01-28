@@ -37,17 +37,21 @@ class roll : public command {
 private:
   void error(const wiz::string &dice_string, const wiz::string &error_message,
              const int error_position = -1, const int error_position_length = 1);
+  int apply_operator(int op1, int op2, char op, roll_flags_d flags, roll_result_d *result);
+
   int evaluate_expression(std::string expression, roll_flags_d flags);
   roll_flags_d parse_modifiers(std::string modifiers);
-
-  void parse_dice_string(const wiz::string &input);
 
   std::string format_output(std::string input_string);
 
 public:
-  dpp::slashcommand register_command() override {
-    return dpp::slashcommand("roll", "#d#", event->command.application_id)
-      .add_option(dpp::command_option(dpp::co_string, "dice", "#d#", true));
+  roll_d data;
+
+  void parse_dice_string(const wiz::string &input);
+
+  roll(dpp::snowflake bot_id) {
+    command_interface = dpp::slashcommand("roll", "#d#", bot_id)
+                          .add_option(dpp::command_option(dpp::co_string, "dice", "#d#", true));
   }
 
   void command_definition() override;
