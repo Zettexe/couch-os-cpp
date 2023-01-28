@@ -19,8 +19,6 @@
 #include "musicos/music_command.h"
 
 #include "musicos/player_manager.h"
-#include <dpp/dpp.h>
-#include <string>
 
 // Define the list of commands as a global variable
 std::list<command *> commands;
@@ -45,6 +43,7 @@ void initialize_commands(dpp::snowflake bot_id, player_manager_c *player_manager
   commands.push_back(new zen_quote(bot_id));
   commands.push_back(new join(bot_id));
   commands.push_back(new leave(bot_id));
+  commands.push_back(new play(bot_id));
 
   for (command *command : commands) {
     commands_vector.push_back(command->command_interface);

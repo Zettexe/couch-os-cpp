@@ -4,6 +4,15 @@
 #include "musicos/music_command.h"
 #include "musicos/player_manager.h"
 #include <chrono>
+#include <curlpp/cURLpp.hpp>
+#include <dpp/appcommand.h>
+#include <dpp/colors.h>
+#include <dpp/message.h>
+#include <exception>
+#include <fmt/core.h>
+#include <nlohmann/json_fwd.hpp>
+#include <spdlog/spdlog.h>
+#include <string>
 
 class join : public music_command {
 public:
@@ -12,11 +21,10 @@ public:
   }
 
   inline void command_definition() override {
-    event->thinking();
+    event->thinking(true);
     dpp::guild guild = event->command.get_guild();
-    bool connected = player_manager->connect_voice(event, guild, event->command.usr.id);
 
-    if (!connected) {
+    if (!player_manager->connect_voice(event, guild, event->command.usr.id)) {
       reply("Join a vc ya dingus.");
       return;
     }
@@ -39,7 +47,7 @@ public:
   }
 
   inline void command_definition() override {
-    event->thinking();
+    event->thinking(true);
 
     if (player_manager->player_is_connected(event->command.guild_id)) {
       player_manager->disconnect_voice(event, event->command.guild_id);
@@ -53,35 +61,80 @@ public:
 
 #endif // MUSICOS_LEAVE_H
 
-// #ifndef MUSICOS_PLAY_H
-// #define MUSICOS_PLAY_H
+#ifndef MUSICOS_PLAY_H
+#define MUSICOS_PLAY_H
 
-// #include "musicos/music_command.h"
-// #include <dpp/dpp.h>
+#include "musicos/music_command.h"
+#include <dpp/dpp.h>
 
-// class play : public music_command {
-// public:
-//   play(dpp::snowflake bot_id) {
-//     command_interface = dpp::slashcommand("play", "Hand me the aux", bot_id);
-//   }
+class play : public music_command {
+public:
+  play(dpp::snowflake bot_id) {
+    command_interface = dpp::slashcommand("play", "Hand me the aux", bot_id)
+                          .add_option(dpp::command_option(dpp::co_string, "query",
+                                                          "What do you want me to play?", true));
+  }
 
-//   inline void command_definition() override {
-//     event->thinking();
-//     dpp::guild = event->command.get_guild(event->command.guild_id);
-//     player_manager.join_voice(event, , event->command.usr.id);
-//     join_voice();
+  // TODO: fix playlists not working
+  inline void command_definition() override {
+    event->thinking(true);
 
-//     if (!player->connected) {
-//       reply("Join a vc ya dingus.");
-//       return;
-//     }
+    dpp::guild guild = event->command.get_guild();
 
-//     // while (!player->voice_connection->voiceclient->is_ready()) {
-//     //   sleep(std::chrono::milliseconds(100));
-//     // }
+    if (!player_manager->connect_voice(event, guild, event->command.usr.id)) {
+      reply("Join a vc ya dingus.");
+      return;
+    }
 
-//     // stream("file here");
-//   }
-// };
+    std::vector<dpp::command_data_option> options =
+      event->command.get_command_interaction().options;
+    std::string input = std::get<std::string>(options[0].value);
 
-// #endif // MUSICOS_PLAY_H
+    nlohmann::json result = player_manager->fetch_search_result(input);
+
+    if (result.size() == 0) {
+      spdlog::warn("Input is not a valid url, trying search...");
+      result = player_manager->fetch_search_result("ytsearch5:" + input);
+      if (result.size() == 0) {
+        spdlog::error("Invalid Input");
+        return;
+      }
+
+      dpp::component c = dpp::component()
+                           .set_type(dpp::cot_selectmenu)
+                           .set_placeholder("Select song...")
+                           .set_id("play_select");
+      for (size_t i = 0; i < result.size(); i += 1) {
+        int seconds = result[i]["duration"].get<int>();
+        int minutes = seconds / 60;
+        int hours = minutes / 60;
+        seconds %= 60;
+        minutes %= 60;
+
+        std::string duration = fmt::format("{}:{}", minutes, seconds);
+        if (hours > 0) {
+          duration = fmt::format("{}:{}", hours, duration);
+        }
+
+        std::string values =
+          fmt::format("{}:{}", result[i]["id"].get<std::string>(), event->command.channel_id);
+
+        c.add_select_option(dpp::select_option(
+          result[i]["title"].get<std::string>(), values,
+          fmt::format("{} - {}", result[i]["uploader"].get<std::string>(), duration)));
+      }
+      edit_response(dpp::message().add_component(dpp::component().add_component(c)));
+      return;
+    }
+
+    player_manager->download(result[0]["id"]);
+    player_manager->player_add_queue(result[0], event->command.guild_id);
+
+    event->delete_original_response();
+    dpp::message m = dpp::message(event->command.channel_id, "")
+                       .add_embed(player_manager->generate_embed(result[0]));
+    create_message(m);
+  }
+};
+
+#endif // MUSICOS_PLAY_H
