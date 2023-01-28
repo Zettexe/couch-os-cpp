@@ -5,8 +5,8 @@
 
 class celebrate : public command {
 public:
-  dpp::slashcommand register_command() override {
-    return dpp::slashcommand("celebrate", "Party woo!", event->command.application_id);
+  celebrate(dpp::snowflake bot_id) {
+    command_interface = dpp::slashcommand("celebrate", "Party woo!", bot_id);
   }
 
   inline void command_definition() override { reply("🎉🎉🎉🎉🎊🎊🎊🎊🎈🎈🎈🧁🧁🥂"); }

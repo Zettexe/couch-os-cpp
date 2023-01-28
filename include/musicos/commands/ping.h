@@ -5,8 +5,8 @@
 
 class ping : public command {
 public:
-  dpp::slashcommand register_command() override {
-    return dpp::slashcommand("ping", "Ping Pong!", event->command.application_id);
+  ping(dpp::snowflake bot_id) {
+    command_interface = dpp::slashcommand("ping", "Ping Pong!", bot_id);
   }
 
   inline void command_definition() override { reply("Pong!"); }

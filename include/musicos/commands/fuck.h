@@ -9,9 +9,7 @@ protected:
                                       "It",    "Yes", "This", "The Man"};
 
 public:
-  dpp::slashcommand register_command() override {
-    return dpp::slashcommand("fuck", "Brandon?", event->command.application_id);
-  }
+  fuck(dpp::snowflake bot_id) { command_interface = dpp::slashcommand("fuck", "Brandon?", bot_id); }
 };
 
 #endif // MUSICOS_FUCK_H

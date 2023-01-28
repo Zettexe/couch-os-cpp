@@ -2,11 +2,14 @@
 #define MUSICOS_COMMAND_H
 
 #include "musicos/player_manager.h"
+#include <dpp/cache.h>
 #include <dpp/cluster.h>
 #include <dpp/dispatcher.h>
 #include <dpp/dpp.h>
+#include <dpp/message.h>
 #include <dpp/snowflake.h>
 #include <list>
+#include <spdlog/spdlog.h>
 #include <string>
 
 class command {

@@ -14,12 +14,14 @@ private:
   std::filesystem::path path = "data/quotes.json";
 
 public:
-  dpp::slashcommand register_command() override {
+  quote() {}
+  quote(dpp::snowflake bot_id) {
     update_quotes(std::filesystem::path(path));
 
-    return dpp::slashcommand("quote", "Citations", event->command.application_id)
-      .add_option(dpp::command_option(dpp::co_string, "quote", "Quote to add", false))
-      .add_option(dpp::command_option(dpp::co_string, "author", "Whodunnit", false));
+    command_interface =
+      dpp::slashcommand("quote", "Citations", bot_id)
+        .add_option(dpp::command_option(dpp::co_string, "quote", "Quote to add", false))
+        .add_option(dpp::command_option(dpp::co_string, "author", "Whodunnit", false));
   }
 
   void update_quotes(std::filesystem::path file_path);

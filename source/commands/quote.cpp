@@ -1,4 +1,5 @@
 #include "musicos/commands/quote.h"
+#include <random>
 
 void quote::update_quotes(std::filesystem::path file_path) {
   std::ifstream in(file_path);

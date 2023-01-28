@@ -5,8 +5,8 @@
 
 class restart : public command {
 public:
-  dpp::slashcommand register_command() override {
-    return dpp::slashcommand("restart", "Restart, Reboot, Reload", event->command.application_id);
+  restart(dpp::snowflake bot_id) {
+    command_interface = dpp::slashcommand("restart", "Restart, Reboot, Reload", bot_id);
   }
 
   inline void command_definition() override {

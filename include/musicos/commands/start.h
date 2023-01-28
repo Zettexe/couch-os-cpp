@@ -2,14 +2,11 @@
 #define MUSICOS_START_H
 
 #include "musicos/command.h"
-#include <dpp/appcommand.h>
-#include <dpp/dpp.h>
-#include <string>
 
 class start : public command {
 public:
-  dpp::slashcommand register_command() override {
-    return dpp::slashcommand("start", "\"Starts\" CouchOS", event->command.application_id);
+  start(dpp::snowflake bot_id) {
+    command_interface = dpp::slashcommand("start", "\"Starts\" CouchOS", bot_id);
   }
 
   inline void command_definition() override { reply("Welcome to CouchOS, please imput command_!"); }

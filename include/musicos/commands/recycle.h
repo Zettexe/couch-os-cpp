@@ -11,9 +11,8 @@ protected:
     "Plastic recycling is a lie!"};
 
 public:
-  dpp::slashcommand register_command() override {
-    return dpp::slashcommand("recycle", "Plastic recycling is a lie!",
-                             event->command.application_id);
+  recycle(dpp::snowflake bot_id) {
+    command_interface = dpp::slashcommand("recycle", "Plastic recycling is a lie!", bot_id);
   }
 };
 

@@ -139,7 +139,7 @@ int main() {
 
     if (message.starts_with("roll ")) {
       for (command *cmd : commands) {
-        if (cmd->register_command().name == "roll") {
+        if (cmd->command_interface.name == "roll") {
           cmd->execute((dpp::message_create_t &)event, "roll");
           break;
         }

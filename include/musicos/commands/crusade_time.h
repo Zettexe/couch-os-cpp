@@ -9,9 +9,10 @@ protected:
                                       "SI VIS PACHEM PARA BELLUM"};
 
 public:
-  dpp::slashcommand register_command() override {
-    return dpp::slashcommand("crusade", "N/A", event->command.application_id)
-      .add_option(dpp::command_option(dpp::co_sub_command, "time", "Deus Vult"));
+  crusade_time(dpp::snowflake bot_id) {
+    command_interface =
+      dpp::slashcommand("crusade", "N/A", bot_id)
+        .add_option(dpp::command_option(dpp::co_sub_command, "time", "Deus Vult"));
   }
 };
 

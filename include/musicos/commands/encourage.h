@@ -8,9 +8,8 @@ protected:
   std::vector<std::string> choices = {"You can do it!", "You got this!", "I believe in you!"};
 
 public:
-  dpp::slashcommand register_command() override {
-    return dpp::slashcommand("encourage", "Positive vibes all around",
-                             event->command.application_id);
+  encourage(dpp::snowflake bot_id) {
+    command_interface = dpp::slashcommand("encourage", "Positive vibes all around", bot_id);
   }
 };
 

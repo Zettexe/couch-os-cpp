@@ -8,6 +8,7 @@
 #include <dpp/appcommand.h>
 #include <dpp/colors.h>
 #include <dpp/message.h>
+#include <dpp/snowflake.h>
 #include <exception>
 #include <fmt/core.h>
 #include <nlohmann/json_fwd.hpp>
@@ -16,9 +17,8 @@
 
 class join : public music_command {
 public:
-  dpp::slashcommand register_command() override {
-    return dpp::slashcommand("join", "Joins the users voice channel.",
-                             event->command.application_id);
+  join(dpp::snowflake bot_id) {
+    command_interface = dpp::slashcommand("join", "Joins the users voice channel.", bot_id);
   }
 
   inline void command_definition() override {
@@ -43,9 +43,8 @@ public:
 
 class leave : public music_command {
 public:
-  dpp::slashcommand register_command() override {
-    return dpp::slashcommand("leave", "Leaves voice channel if connected.",
-                             event->command.application_id);
+  leave(dpp::snowflake bot_id) {
+    command_interface = dpp::slashcommand("leave", "Leaves voice channel if connected.", bot_id);
   }
 
   inline void command_definition() override {
