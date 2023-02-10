@@ -1,4 +1,5 @@
 #include "musicos/command.h"
+#include <dpp/message.h>
 #include <regex>
 
 dpp::cluster *command::bot;
@@ -104,8 +105,13 @@ void command::reply(dpp::interaction_response_type type, const std::string &mess
   event->reply(type, limited_message);
 }
 
-void command::reply(dpp::message &message, const std::string &log_message) {
+void command::reply(dpp::message &message, const bool ephemeral, const std::string &log_message) {
   log_reply(message.content + log_message);
+
+  if (ephemeral) {
+    message.set_flags(dpp::m_ephemeral);
+  }
+
   if (message_event) {
     message_event->reply(message);
     return;
@@ -113,14 +119,22 @@ void command::reply(dpp::message &message, const std::string &log_message) {
   event->reply(message);
 }
 
-void command::reply(const std::string &message, const std::string &log_message) {
+void command::reply(const std::string &message, const bool ephemeral,
+                    const std::string &log_message) {
   std::string limited_message = limit_message_size(message);
   log_reply(limited_message + log_message);
+
+  dpp::message message_object = dpp::message(limited_message);
+
+  if (ephemeral) {
+    message_object.set_flags(dpp::m_ephemeral);
+  }
+
   if (message_event) {
-    message_event->reply(message);
+    message_event->reply(message_object);
     return;
   }
-  event->reply(limited_message);
+  event->reply(message_object);
 }
 
 void command::edit_response(const dpp::message &message) {

@@ -7,6 +7,8 @@
 #include <thread>
 
 void player_d::stream(std::string file_name) {
+  data_loaded = true;
+
   // voice_client->set_send_audio_type(dpp::discord_voice_client::satype_overlap_audio);
   ogg_sync_state sync;
   ogg_stream_state stream_state;
@@ -14,9 +16,8 @@ void player_d::stream(std::string file_name) {
   ogg_packet packet;
   char *buffer;
 
-  FILE *file_stream;
-  std::string file_path = "music/" + file_name;
-  file_stream = fopen(file_path.c_str(), "rb");
+  std::string file_path = "music/" + file_name + ".opus";
+  FILE *file_stream = fopen(file_path.c_str(), "rb");
 
   fseek(file_stream, 0L, SEEK_END);
   size_t file_stream_position = ftell(file_stream);
@@ -62,8 +63,6 @@ void player_d::stream(std::string file_name) {
     spdlog::error("Error reading ogg page");
     return;
   }
-
-  // voice_client->insert_marker(file_name);
 
   // Loop though all the pages and send the packets to the vc
   while (int page_out_result = ogg_sync_pageout(&sync, &page)) {

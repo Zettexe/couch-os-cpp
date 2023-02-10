@@ -237,28 +237,60 @@ int main() {
   });
 
   bot.on_voice_track_marker([&player_manager](dpp::voice_track_marker_t event) {
-    std::vector<wiz::string> values = ((wiz::string)event.track_meta).split(":");
+    spdlog::debug("Marker: {}", event.track_meta);
+    if (event.track_meta == "end_of_stream") {
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    if (values[0] == "end_of_stream") {
-      player_manager.player_pop_queue(values[1]);
+      dpp::snowflake guild_id = event.voice_client->server_id;
+
+      player_manager.player_unset_data_loaded(guild_id);
+
+      if (player_manager.player_paused(guild_id)) {
+        return;
+      }
+
+      int looping = player_manager.player_get_looping(guild_id);
+      if (looping <= 0) {
+        player_manager.player_pop_queue(guild_id);
+        return;
+      }
+
+      if (looping != '*') {
+        player_manager.player_set_looping(looping - 1, guild_id);
+        spdlog::debug("Looping detected: {} times left.", looping - 1);
+      } else {
+        spdlog::debug("Looping detected: Infinite times left.");
+      }
+      player_manager.player_start_stream(guild_id);
     }
   });
 
   bot.on_voice_ready([&player_manager](dpp::voice_ready_t event) {
-    player_manager.set_voice_client(event.voice_client, event.voice_client->server_id);
+    dpp::snowflake guild_id = event.voice_client->server_id;
+    player_manager.set_voice_client(event.voice_client, guild_id);
+
+    if (!player_manager.player_is_data_loaded(guild_id)) {
+      player_manager.player_start_stream(guild_id);
+      return;
+    }
+
+    if (player_manager.player_paused(guild_id)) {
+      player_manager.player_pause(false, guild_id);
+    }
   });
 
   bot.on_select_click([&bot, &player_manager](const dpp::select_click_t &event) {
     std::vector<wiz::string> values = ((wiz::string)event.values[0]).split(":");
-
-    player_manager.download(values[0]);
     nlohmann::json video_info = player_manager.fetch_search_result(values[0]);
-    player_manager.player_add_queue(video_info, event.command.guild_id);
+    player_manager.download_and_add_to_queue(video_info, event.command.guild_id);
 
-    event.reply(dpp::ir_update_message, "Hahaha time to get deleted sucker");
+    event.reply(dpp::ir_update_message, "hahahahaha time to get deleted sucker");
     event.delete_original_response();
-    bot.message_create(
-      dpp::message(values[1], "").add_embed(player_manager.generate_embed(video_info)));
+
+    player_manager.player_start_stream(event.command.guild_id);
+
+    bot.message_create(dpp::message(
+      values[1], player_manager.generate_embed(video_info, "Selection added to queue:")));
   });
 
   // bot.on_voice_state_update([](dpp::voice_state_update_t event){

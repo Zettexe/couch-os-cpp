@@ -1,7 +1,7 @@
 #ifndef MUSICOS_COMMAND_H
 #define MUSICOS_COMMAND_H
 
-#include "musicos/player_manager.h"
+// #include "musicos/player_manager.h"
 #include <dpp/cache.h>
 #include <dpp/cluster.h>
 #include <dpp/dispatcher.h>
@@ -11,6 +11,8 @@
 #include <list>
 #include <spdlog/spdlog.h>
 #include <string>
+
+class player_manager_c;
 
 class command {
 private:
@@ -49,9 +51,11 @@ protected:
   void reply(dpp::interaction_response_type type, const std::string &message,
              const std::string &log_message = "");
   // event.reply() with logging.
-  void reply(dpp::message &message, const std::string &log_message = "");
+  void reply(dpp::message &message, const bool ephemeral = false,
+             const std::string &log_message = "");
   // event.reply() with logging.
-  void reply(const std::string &message, const std::string &log_message = "");
+  void reply(const std::string &message, const bool ephemeral = false,
+             const std::string &log_message = "");
 
   // event.edit_response() with logging.
   void edit_response(const dpp::message &message);

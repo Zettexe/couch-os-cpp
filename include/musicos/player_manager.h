@@ -2,6 +2,7 @@
 #define MUSICOS_PLAYER_MANAGER_H
 
 #include "wiz/cache.h"
+#include <algorithm>
 #include <chrono>
 #include <cstdlib>
 #include <deque>
@@ -13,16 +14,28 @@
 #include <filesystem>
 #include <fmt/core.h>
 #include <fmt/format.h>
+#include <future>
+#include <memory>
 #include <mutex>
 #include <ogg/ogg.h>
+#include <spdlog/spdlog.h>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 
+struct player_queue {
+  nlohmann::json video_data;
+  std::shared_ptr<std::future<void>> download_progress;
+};
+
 struct player_d {
   bool connected;
+  bool paused;
+  bool data_loaded;
+  int looping = 0;
   dpp::discord_voice_client *voice_client;
-  std::deque<nlohmann::json> queue;
+  std::deque<player_queue> queue;
 
   void stream(std::string file_path);
 };
@@ -83,54 +96,186 @@ public:
     return player->connected;
   }
 
-  void player_add_queue(nlohmann::json video_data, dpp::snowflake guild_id,
-                        bool add_front = false) {
+  bool player_is_data_loaded(dpp::snowflake guild_id) {
     std::lock_guard<std::mutex> lock(player_mutex);
     assign_player(guild_id);
-    if (add_front) {
-      player->queue.push_front(video_data);
-    } else {
-      player->queue.push_back(video_data);
-    }
+    return player->data_loaded;
+  }
+
+  void player_clear_queue(dpp::snowflake guild_id) {
+    std::lock_guard<std::mutex> lock(player_mutex);
+    assign_player(guild_id);
+    player->queue.clear();
+    player->voice_client->stop_audio();
   }
 
   void player_pop_queue(dpp::snowflake guild_id) {
     std::lock_guard<std::mutex> lock(player_mutex);
     assign_player(guild_id);
-    player->queue.pop_front();
     if (player->queue.size() > 0) {
-      player->stream(player->queue[0]["id"]);
+      player->queue.pop_front();
+      if (player->queue.size() > 0) {
+        player->queue[0].download_progress->wait();
+        player->stream(player->queue[0].video_data["id"]);
+      }
     }
   }
 
-  void stream_file(std::string video_id, dpp::snowflake guild_id) {
+  void player_start_stream(dpp::snowflake guild_id) {
     std::lock_guard<std::mutex> lock(player_mutex);
     assign_player(guild_id);
-    player->stream(video_id);
+    if (player->queue.size() > 0) {
+      if (player->queue[0].download_progress && player->queue[0].download_progress->valid()) {
+        player->queue[0].download_progress->wait();
+      }
+      player->stream(player->queue[0].video_data["id"]);
+    }
   }
 
-  dpp::embed generate_embed(nlohmann::json video_json) {
-    int seconds = video_json["duration"].get<int>();
+  int player_get_looping(dpp::snowflake guild_id) {
+    std::lock_guard<std::mutex> lock(player_mutex);
+    assign_player(guild_id);
+    return player->looping;
+  }
+
+  void player_set_looping(int times, dpp::snowflake guild_id) {
+    std::lock_guard<std::mutex> lock(player_mutex);
+    assign_player(guild_id);
+    player->looping = times;
+  }
+
+  void player_skip(dpp::snowflake guild_id) {
+    std::lock_guard<std::mutex> lock(player_mutex);
+    assign_player(guild_id);
+    player->voice_client->skip_to_next_marker();
+  }
+
+  void player_pause(bool pause, dpp::snowflake guild_id) {
+    std::lock_guard<std::mutex> lock(player_mutex);
+    assign_player(guild_id);
+    player->paused = pause;
+    player->voice_client->pause_audio(pause);
+  }
+
+  void player_unset_data_loaded(dpp::snowflake guild_id) {
+    std::lock_guard<std::mutex> lock(player_mutex);
+    assign_player(guild_id);
+    player->data_loaded = false;
+  }
+
+  bool player_paused(dpp::snowflake guild_id) {
+    std::lock_guard<std::mutex> lock(player_mutex);
+    assign_player(guild_id);
+    return player->paused;
+  }
+
+  bool player_playing(dpp::snowflake guild_id) {
+    std::lock_guard<std::mutex> lock(player_mutex);
+    assign_player(guild_id);
+    return !player->voice_client->is_paused();
+  }
+
+  std::deque<player_queue> *player_get_queue(dpp::snowflake guild_id) {
+    std::lock_guard<std::mutex> lock(player_mutex);
+    assign_player(guild_id);
+    return &player->queue;
+  }
+
+  std::string get_formatted_timestamp(int seconds) {
     int minutes = seconds / 60;
     int hours = minutes / 60;
     seconds %= 60;
     minutes %= 60;
 
-    std::string duration = fmt::format("{}:{}", minutes, seconds);
+    std::stringstream timestamp;
     if (hours > 0) {
-      duration = fmt::format("{}:{}", hours, duration);
+      timestamp << hours << ":";
+    }
+    timestamp << std::setfill('0') << std::setw(2) << minutes << ":" << std::setw(2) << seconds;
+
+    return timestamp.str();
+  }
+
+  dpp::embed generate_single_embed(nlohmann::json video_json, std::string title) {
+    std::string duration = get_formatted_timestamp(video_json["duration"].get<int>());
+
+    return dpp::embed()
+      .set_color(dpp::colors::scarlet_red)
+      .set_title(title)
+      .set_description(fmt::format("[{}]({})", video_json["title"].get<std::string>(),
+                                   video_json["webpage_url"].get<std::string>()))
+      .set_thumbnail(video_json["thumbnail"].get<std::string>())
+      .add_field("", video_json["uploader"].get<std::string>(), true)
+      .add_field("", duration, true);
+    ;
+  }
+
+  dpp::embed generate_multi_embed(nlohmann::json video_json, std::string title) {
+    std::string description;
+
+    for (size_t i = 0; i < std::min<size_t>(5, video_json.size()); i++) {
+      nlohmann::json item = video_json[i];
+      if (description != "") {
+        description += "\n";
+      }
+      description +=
+        fmt::format("[{}] [{}]({})", get_formatted_timestamp(item["duration"].get<int>()),
+                    item["title"].get<std::string>(), item["webpage_url"].get<std::string>());
+    }
+
+    if (video_json.size() > 5) {
+      description += fmt::format("\n+{} more...", video_json.size() - 5);
+    }
+
+    return dpp::embed()
+      .set_color(dpp::colors::scarlet_red)
+      .set_title(title)
+      .set_description(description);
+  }
+
+  dpp::embed generate_embed(nlohmann::json video_json, std::string title) {
+    if (video_json.size() > 1) {
+      return generate_multi_embed(video_json, title);
+    }
+    return generate_single_embed(video_json[0], title);
+  }
+
+  std::tuple<bool, dpp::embed> generate_queue_embed(dpp::snowflake guild_id) {
+    std::lock_guard<std::mutex> lock(player_mutex);
+    assign_player(guild_id);
+
+    std::string now_playing_str = "";
+    std::string queue_str = "";
+
+    for (size_t i = 0; i < std::min<size_t>(5, player->queue.size()); i++) {
+      player_queue item = std::move(player->queue.at(i));
+
+      if (now_playing_str == "") {
+        now_playing_str =
+          fmt::format("[{}] [{}]({})", get_formatted_timestamp(item.video_data["duration"]),
+                      item.video_data["title"], item.video_data["webpage_url"]);
+        continue;
+      }
+
+      queue_str +=
+        fmt::format("[{}] [{}]({})\n", get_formatted_timestamp(item.video_data["duration"]),
+                    item.video_data["title"], item.video_data["webpage_url"]);
+    }
+
+    if (player->queue.size() > 5) {
+      queue_str += fmt::format("+{} more...", player->queue.size() - 5);
     }
 
     dpp::embed embed = dpp::embed()
                          .set_color(dpp::colors::scarlet_red)
-                         .set_title(video_json["title"].get<std::string>())
-                         .set_url(video_json["webpage_url"].get<std::string>())
-                         .set_description(" ")
-                         .set_thumbnail(video_json["thumbnail"].get<std::string>())
-                         .add_field("", "Added To Queue", true)
-                         .add_field("", duration, true);
-    //  .add_field("Next up:", "[title](url)");
-    return embed;
+                         .set_title("Queue")
+                         .add_field("Now Playing:", now_playing_str);
+
+    if (!queue_str.empty()) {
+      embed.add_field("Coming next:", queue_str);
+    }
+
+    return std::make_tuple(now_playing_str == "", embed);
   }
 
   nlohmann::json fetch_search_result(std::string input) {
@@ -198,16 +343,41 @@ public:
     return filtered_output;
   }
 
-  void download(std::string video_id) {
-    if (std::filesystem::exists(fmt::format("{}.opus", video_id))) {
-      return;
+  std::future<void> download(std::string video_id) {
+    if (std::filesystem::exists(fmt::format("music/{}.opus", video_id))) {
+      // TODO: Check if file is corrupt
+      return std::async([]() {});
     }
 
-    std::string t = fmt::format("yt-dlp -f 251 --http-chunk-size 2M '{}' -x "
-                                "--audio-format opus --audio-quality 0 -o 'music/{}.ogg'",
-                                video_id, video_id);
+    return std::async([&video_id]() {
+      std::string t = fmt::format("yt-dlp -f 251 --http-chunk-size 2M '{}' -x "
+                                  "--audio-format opus --audio-quality 0 -o 'music/{}.ogg'",
+                                  video_id, video_id);
+      system(t.c_str());
+    });
+  }
 
-    system(t.c_str());
+  void download_and_add_to_queue(nlohmann::json video_data, dpp::snowflake guild_id) {
+    player_queue queue_item = player_queue();
+    queue_item.video_data = video_data;
+    queue_item.download_progress =
+      std::make_shared<std::future<void>>(download(video_data["id"].get<std::string>()));
+
+    std::lock_guard<std::mutex> lock(player_mutex);
+    assign_player(guild_id);
+    player->queue.push_back(queue_item);
+
+    if (player->voice_client) {
+      if (!player->data_loaded) {
+        player->stream(player->queue[0].video_data["id"]);
+        return;
+      }
+
+      if (player->paused) {
+        player->paused = false;
+        player->voice_client->pause_audio(false);
+      }
+    }
   }
 };
 

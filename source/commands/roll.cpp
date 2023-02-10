@@ -531,5 +531,5 @@ void roll::command_definition() {
 
   wiz::string message = format_output(input_string);
 
-  reply(message, ", Message Size: " + std::to_string(message.size()));
+  reply(message, false, ", Message Size: " + std::to_string(message.size()));
 }

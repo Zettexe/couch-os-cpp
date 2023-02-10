@@ -6,7 +6,7 @@
 #include "musicos/commands/fuck.h"
 #include "musicos/commands/god_tier_quote.h"
 #include "musicos/commands/hello.h"
-#include "musicos/commands/join.h"
+#include "musicos/commands/music.h"
 #include "musicos/commands/pasta.h"
 #include "musicos/commands/ping.h"
 #include "musicos/commands/quote.h"
@@ -44,6 +44,11 @@ void initialize_commands(dpp::snowflake bot_id, player_manager_c *player_manager
   commands.push_back(new join(bot_id));
   commands.push_back(new leave(bot_id));
   commands.push_back(new play(bot_id));
+  commands.push_back(new skip(bot_id));
+  commands.push_back(new class pause(bot_id));
+  commands.push_back(new queue(bot_id));
+  commands.push_back(new stop(bot_id));
+  commands.push_back(new loop(bot_id));
 
   for (command *command : commands) {
     commands_vector.push_back(command->command_interface);
