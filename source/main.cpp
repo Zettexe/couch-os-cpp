@@ -282,7 +282,7 @@ int main() {
   bot.on_select_click([&bot, &player_manager](const dpp::select_click_t &event) {
     std::vector<wiz::string> values = ((wiz::string)event.values[0]).split(":");
     nlohmann::json video_info = player_manager.fetch_search_result(values[0]);
-    player_manager.download_and_add_to_queue(video_info, event.command.guild_id);
+    player_manager.add_to_queue(video_info, event.command.guild_id);
 
     event.reply(dpp::ir_update_message, "hahahahaha time to get deleted sucker");
     event.delete_original_response();

@@ -52,6 +52,38 @@ private:
     player = &players[guild_id];
   }
 
+  std::future<void> download(std::string video_id) {
+    return std::async([&video_id] {
+      // TODO: Check if file is corrupt
+      if (std::filesystem::exists(fmt::format("music/{}.opus", video_id))) {
+        spdlog::debug("Download skipping: {}", video_id);
+        return;
+      }
+      spdlog::debug("Download: {}", video_id);
+
+      std::string t = fmt::format("yt-dlp -f 251 --http-chunk-size 2M '{}' -x "
+                                  "--audio-format opus --audio-quality 0 -o 'music/{}.ogg'",
+                                  video_id, video_id);
+      system(t.c_str());
+    });
+  }
+
+  void download_and_stream() {
+    spdlog::debug("Wait for download: {}", player->queue[0].video_data["id"]);
+    if (player->queue[0].download_progress) {
+      player->queue[0].download_progress->wait();
+    } else {
+      download(player->queue[0].video_data["id"]).wait();
+    }
+    if (player->queue.size() > 1) {
+      player->queue[1].download_progress =
+        std::make_shared<std::future<void>>(download(player->queue[1].video_data["id"]));
+    }
+
+    spdlog::debug("Start Stream: {}", player->queue[0].video_data["id"]);
+    player->stream(player->queue[0].video_data["id"]);
+  }
+
 public:
   player_manager_c(){};
   ~player_manager_c(){};
@@ -113,10 +145,10 @@ public:
     std::lock_guard<std::mutex> lock(player_mutex);
     assign_player(guild_id);
     if (player->queue.size() > 0) {
+      spdlog::debug("Pop Queue: {}", player->queue[0].video_data["id"]);
       player->queue.pop_front();
       if (player->queue.size() > 0) {
-        player->queue[0].download_progress->wait();
-        player->stream(player->queue[0].video_data["id"]);
+        download_and_stream();
       }
     }
   }
@@ -125,10 +157,7 @@ public:
     std::lock_guard<std::mutex> lock(player_mutex);
     assign_player(guild_id);
     if (player->queue.size() > 0) {
-      if (player->queue[0].download_progress && player->queue[0].download_progress->valid()) {
-        player->queue[0].download_progress->wait();
-      }
-      player->stream(player->queue[0].video_data["id"]);
+      download_and_stream();
     }
   }
 
@@ -181,6 +210,12 @@ public:
     return &player->queue;
   }
 
+  player_queue *player_get_first_queue(dpp::snowflake guild_id) {
+    std::lock_guard<std::mutex> lock(player_mutex);
+    assign_player(guild_id);
+    return &player->queue[0];
+  }
+
   std::string get_formatted_timestamp(int seconds) {
     int minutes = seconds / 60;
     int hours = minutes / 60;
@@ -207,7 +242,6 @@ public:
       .set_thumbnail(video_json["thumbnail"].get<std::string>())
       .add_field("", video_json["uploader"].get<std::string>(), true)
       .add_field("", duration, true);
-    ;
   }
 
   dpp::embed generate_multi_embed(nlohmann::json video_json, std::string title) {
@@ -248,7 +282,7 @@ public:
     std::string queue_str = "";
 
     for (size_t i = 0; i < std::min<size_t>(5, player->queue.size()); i++) {
-      player_queue item = std::move(player->queue.at(i));
+      const player_queue item = player->queue[i];
 
       if (now_playing_str == "") {
         now_playing_str =
@@ -287,7 +321,7 @@ public:
 
     std::string command =
       "yt-dlp --dump-json --flat-playlist --compat-options no-youtube-unavailable-videos \"" +
-      input + "\" 2>/dev/null";
+      input + "\"";
     std::string output;
 
     FILE *pipe = popen(command.c_str(), "r");
@@ -343,25 +377,9 @@ public:
     return filtered_output;
   }
 
-  std::future<void> download(std::string video_id) {
-    if (std::filesystem::exists(fmt::format("music/{}.opus", video_id))) {
-      // TODO: Check if file is corrupt
-      return std::async([]() {});
-    }
-
-    return std::async([&video_id]() {
-      std::string t = fmt::format("yt-dlp -f 251 --http-chunk-size 2M '{}' -x "
-                                  "--audio-format opus --audio-quality 0 -o 'music/{}.ogg'",
-                                  video_id, video_id);
-      system(t.c_str());
-    });
-  }
-
-  void download_and_add_to_queue(nlohmann::json video_data, dpp::snowflake guild_id) {
+  void add_to_queue(nlohmann::json video_data, dpp::snowflake guild_id) {
     player_queue queue_item = player_queue();
     queue_item.video_data = video_data;
-    queue_item.download_progress =
-      std::make_shared<std::future<void>>(download(video_data["id"].get<std::string>()));
 
     std::lock_guard<std::mutex> lock(player_mutex);
     assign_player(guild_id);
@@ -369,7 +387,7 @@ public:
 
     if (player->voice_client) {
       if (!player->data_loaded) {
-        player->stream(player->queue[0].video_data["id"]);
+        download_and_stream();
         return;
       }
 

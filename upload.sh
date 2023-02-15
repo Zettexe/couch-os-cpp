@@ -1,0 +1,1 @@
+scp -u -r -i ./.ssh/id_rsa bin root@130.51.20.12:~/dev-bot

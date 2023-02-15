@@ -94,17 +94,17 @@ public:
 
     if (options.empty() || std::get<std::string>(options[0].value) == "") {
       if (player_manager->player_get_queue(guild.id)->empty()) {
-        reply(dpp::ir_update_message, "Nothing is playing or you forgot to input a query.");
+        edit_response("Nothing is paused or you forgot to input a query.");
         return;
       }
 
       player_manager->player_pause(false, guild.id);
-      reply(dpp::ir_update_message, "Unpaused player.");
+      edit_response("Player unpaused.");
       return;
     }
 
     if (!player_manager->connect_voice(event, guild, event->command.usr.id)) {
-      reply(dpp::ir_update_message, "Join a voice channel first.");
+      edit_response("Join a voice channel first.");
       return;
     }
 
@@ -117,7 +117,7 @@ public:
       result = player_manager->fetch_search_result("ytsearch5:" + input);
       if (result.empty()) {
         spdlog::error("Invalid Input");
-        reply(dpp::ir_update_message, "Invalid input.");
+        edit_response("Invalid input.");
         return;
       }
 
@@ -137,13 +137,12 @@ public:
           fmt::format("{} - {}", result[i]["uploader"].get<std::string>(), duration)));
       }
 
-      reply(dpp::ir_update_message,
-            dpp::message().add_component(dpp::component().add_component(component)));
+      edit_response(dpp::message().add_component(dpp::component().add_component(component)));
       return;
     }
 
     for (nlohmann::json video : result) {
-      player_manager->download_and_add_to_queue(video, event->command.guild_id);
+      player_manager->add_to_queue(video, event->command.guild_id);
     }
 
     event->delete_original_response();
@@ -176,7 +175,10 @@ public:
     }
     player_manager->player_pop_queue(guild_id);
 
-    reply("Skipped to ", true);
+    player_queue *queue = player_manager->player_get_first_queue(guild_id);
+    reply(fmt::format("Skipped to [{}]()", queue->video_data["title"],
+                      queue->video_data["webpage_url"]),
+          true);
   }
 };
 
@@ -197,7 +199,11 @@ public:
     bool paused = player_manager->player_paused(event->command.guild_id);
     player_manager->player_pause(!paused, event->command.guild_id);
 
-    reply("Player paused.", true);
+    if (!paused) {
+      reply("Player paused.", true);
+    } else {
+      reply("Player unpaused.", true);
+    }
   }
 };
 
